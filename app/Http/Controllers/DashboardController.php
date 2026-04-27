@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Models\BarangMasuk;
 use App\Models\LogAktivitas;
+use App\Models\PenanggungJawab;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -14,21 +16,20 @@ class DashboardController extends Controller
     {
         // ==================== STATISTIK UTAMA ====================
         $totalBarang = Barang::sum('stok');
-        $barangBaik = Barang::where('kondisi', 'baik')->sum('stok');
-        $barangRusak = Barang::where('kondisi', 'rusak')->sum('stok');
-        $barangHilang = Barang::where('kondisi', 'hilang')->sum('stok');
-        
+        $barangBaik = Barang::sum('jumlah_baik');
+        $barangRusak = Barang::sum('jumlah_rusak');
+        $barangHilang = Barang::sum('jumlah_hilang');
+
         // ==================== GRAFIK INVENTARIS PER SEMESTER ====================
+        // Menggunakan data dari barang_masuk (per semester)
         $semesterLabels = ['Semester Ganjil 2024/2025', 'Semester Genap 2024/2025', 'Semester Ganjil 2025/2026', 'Semester Genap 2025/2026'];
-        
-        // Data dari database (barang masuk per semester)
         $semesterData = [
             BarangMasuk::whereBetween('tanggal_masuk', ['2024-07-01', '2024-12-31'])->sum('jumlah_masuk'),
             BarangMasuk::whereBetween('tanggal_masuk', ['2025-01-01', '2025-06-30'])->sum('jumlah_masuk'),
             BarangMasuk::whereBetween('tanggal_masuk', ['2025-07-01', '2025-12-31'])->sum('jumlah_masuk'),
             BarangMasuk::whereBetween('tanggal_masuk', ['2026-01-01', '2026-06-30'])->sum('jumlah_masuk'),
         ];
-        
+
         // ==================== GRAFIK BARANG MASUK (6 BULAN TERAKHIR) ====================
         $bulanLabels = [];
         $bulanData = [];
@@ -40,43 +41,44 @@ class DashboardController extends Controller
                 ->sum('jumlah_masuk');
             $bulanData[] = $jumlah;
         }
-        
+
         // ==================== GRAFIK PENGGUNAAN PRAKTIKUM ====================
-        // Data dari tabel barang (nama barang tertentu)
-        $praktikumLabels = ['Kamera Video', 'Mikroskop', 'Speaker'];
+        // Contoh data – bisa disesuaikan dengan data peminjaman jika ada
+        $praktikumLabels = ['Kamera Video', 'Tripod', 'Speaker'];
         $praktikumDigunakan = [
-            Barang::where('nama_barang', 'like', '%Kamera Video%')->sum('stok') * 0.8,
-            Barang::where('nama_barang', 'like', '%Tripod%')->sum('stok') * 0.7,
-            Barang::where('nama_barang', 'like', '%Speaker%')->sum('stok') * 0.6,
+            Barang::where('nama_barang', 'like', '%Kamera Video%')->sum('jumlah_baik') * 0.8,
+            Barang::where('nama_barang', 'like', '%Tripod%')->sum('jumlah_baik') * 0.7,
+            Barang::where('nama_barang', 'like', '%Speaker%')->sum('jumlah_baik') * 0.6,
         ];
         $praktikumKapasitas = [
             Barang::where('nama_barang', 'like', '%Kamera Video%')->sum('stok'),
             Barang::where('nama_barang', 'like', '%Tripod%')->sum('stok'),
             Barang::where('nama_barang', 'like', '%Speaker%')->sum('stok'),
         ];
-        
+
         // ==================== QUICK NOTIFICATIONS ====================
-        // 1. Barang stok menipis (stok <= 3)
+        // Stok menipis (stok <= 3)
         $stokMenipis = Barang::where('stok', '<=', 3)->where('stok', '>', 0)->limit(5)->get();
-        
-        // 2. Barang rusak terbaru
-        $barangRusakTerbaru = Barang::where('kondisi', 'rusak')
+
+        // Barang rusak terbaru (berdasarkan updated_at, dengan jumlah_rusak > 0)
+        $barangRusakTerbaru = Barang::where('jumlah_rusak', '>', 0)
             ->orderBy('updated_at', 'desc')
             ->limit(3)
             ->get();
-        
-        // 3. Barang masuk terbaru
+
+        // Barang masuk terbaru (dari tabel barang_masuk)
         $barangMasukTerbaru = BarangMasuk::with('barang')
             ->orderBy('tanggal_masuk', 'desc')
             ->limit(5)
             ->get();
-        
+
         // ==================== RECENT ACTIVITY ====================
         $recentActivities = LogAktivitas::with('user')
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-        
+
+        // Kirim semua data ke view
         return view('dashboard', compact(
             'totalBarang',
             'barangBaik',

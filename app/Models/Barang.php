@@ -12,10 +12,29 @@ class Barang extends Model
     protected $table = 'barang';
     protected $primaryKey = 'id_barang';
     protected $fillable = [
-        'kode_barang', 'nama_barang', 'merk', 'deskripsi', 'kapasitas',
-        'id_lokasi', 'stok', 'kondisi', 'keterangan'
+        'kode_barang',
+        'nama_barang',
+        'merk',
+        'deskripsi',
+        'kapasitas',
+        'id_lokasi',
+        'stok',
+        'jumlah_baik',
+        'jumlah_rusak',
+        'jumlah_hilang',
+        'keterangan',
+        'semester',
+        'tahun_ajaran'
     ];
 
+    // Accessor untuk stok baik
+    public function getStokBaikAttribute()
+    {
+        return $this->stok - ($this->jumlah_rusak ?? 0) - ($this->jumlah_hilang ?? 0);
+    }
+
+
+    // Relasi (tetap sama)
     public function lokasi()
     {
         return $this->belongsTo(Lokasi::class, 'id_lokasi');
@@ -39,5 +58,5 @@ class Barang extends Model
     public function riwayatKondisi()
     {
         return $this->hasMany(RiwayatKondisi::class, 'id_barang');
-    }
+    } 
 }

@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@php use Illuminate\Support\Str; @endphp
+
 @section('title', 'Dashboard')
 
 @section('content')
@@ -246,7 +248,24 @@
                                 @forelse($recentActivities as $activity)
                                 <tr>
                                     <td class="ps-3">{{ $activity->aktivitas }}</td>
-                                    <td>-</td>
+                                    <td>
+                                        @php
+                                            // Ekstrak nama barang dari deskripsi
+                                            $namaBarang = '-';
+                                            $deskripsi = $activity->deskripsi ?? '';
+                                            if (preg_match('/(?:barang|Barang)\s+(.+?)(?:\s+dengan|\s+sebanyak|\s+dari|\s*$)/', $deskripsi, $matches)) {
+                                                $namaBarang = trim($matches[1]);
+                                            } elseif (preg_match('/Menambah barang (.+?) dengan kode/', $deskripsi, $matches)) {
+                                                $namaBarang = trim($matches[1]);
+                                            } elseif (preg_match('/Menghapus barang (.+)/', $deskripsi, $matches)) {
+                                                $namaBarang = trim($matches[1]);
+                                            }
+                                            if ($namaBarang == '-' && !empty($deskripsi)) {
+                                                $namaBarang = Str::limit($deskripsi, 40);
+                                            }
+                                        @endphp
+                                        {{ $namaBarang }}
+                                    </td>
                                     <td>{{ $activity->user->nama ?? 'System' }}</td>
                                     <td>{{ $activity->created_at->format('Y-m-d H:i') }}</td>
                                     <td class="pe-3">

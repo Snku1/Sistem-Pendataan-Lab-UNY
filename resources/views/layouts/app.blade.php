@@ -1,36 +1,38 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Sistem Informasi Lab') - Inventaris Laboratorium</title>
-    
+
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         * {
             font-family: 'Inter', sans-serif;
         }
-        
+
         body {
             background-color: #f5f7fb;
+            overflow-x: hidden;
         }
-        
+
         /* Navbar Styling */
         .navbar-brand {
             font-weight: 700;
             font-size: 1.25rem;
             white-space: nowrap;
         }
-        
+
         /* Search Bar Styling */
         .search-bar {
             border-radius: 50px;
@@ -40,24 +42,66 @@
             padding: 0.5rem 1rem;
             transition: all 0.3s ease;
         }
-        
+
         .search-bar::placeholder {
             color: rgba(255, 255, 255, 0.7);
         }
-        
+
         .search-bar:focus {
             background-color: rgba(255, 255, 255, 0.25);
             outline: none;
             box-shadow: none;
         }
-        
-        /* Sidebar Styling */
+
+        /* Sidebar Styling - dengan transisi untuk collapse */
         .sidebar {
-            min-height: calc(100vh - 60px);
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
             box-shadow: 1px 0 0 rgba(0, 0, 0, 0.05);
+            transition: width 0.3s ease;
+            overflow-x: hidden;
+            white-space: nowrap;
+            flex-shrink: 0;
+            height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
         }
-        
+
+        /* Mode expanded (default) */
+        .sidebar-expanded {
+            width: 260px;
+        }
+
+        /* Mode collapsed (mini) */
+        .sidebar-collapsed {
+            width: 70px;
+        }
+
+        .sidebar-collapsed .nav-link span,
+        .sidebar-collapsed .nav-section-title span,
+        .sidebar-collapsed .nav-section-title i:not(.fa-chevron-right) {
+            display: none;
+        }
+
+        .sidebar-collapsed .nav-link {
+            text-align: center;
+            padding: 0.625rem 0;
+        }
+
+        .sidebar-collapsed .nav-link i {
+            margin-right: 0 !important;
+            width: auto;
+            font-size: 1.25rem;
+        }
+
+        .sidebar-collapsed .nav-section-title {
+            text-align: center;
+            padding: 0.75rem 0;
+        }
+
+        .sidebar-collapsed .nav-section-title i {
+            margin-right: 0;
+        }
+
         .sidebar .nav-section-title {
             font-size: 0.7rem;
             font-weight: 600;
@@ -66,8 +110,9 @@
             color: #6c757d;
             padding: 0.75rem 1rem 0.5rem 1rem;
             margin-top: 0.5rem;
+            transition: all 0.3s;
         }
-        
+
         .sidebar .nav-link {
             color: #4a5568;
             padding: 0.625rem 1rem;
@@ -77,39 +122,48 @@
             font-weight: 500;
             transition: all 0.2s ease;
         }
-        
+
         .sidebar .nav-link:hover {
             background-color: #eef2ff;
             color: #1e40af;
         }
-        
+
         .sidebar .nav-link.active {
             background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
             color: white !important;
             box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
         }
-        
+
         .sidebar .nav-link i {
             width: 1.75rem;
             font-size: 1rem;
+            margin-right: 0.5rem;
         }
-        
+
         /* Main Content */
         .main-content {
             background-color: #f5f7fb;
             min-height: calc(100vh - 60px);
+            flex-grow: 1;
+            overflow-x: auto;
         }
-        
+
+        /* Layout container */
+        .app-container {
+            display: flex;
+            width: 100%;
+        }
+
         /* Card Hover Effect */
         .card-hover {
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        
+
         .card-hover:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
         }
-        
+
         /* User Avatar */
         .user-avatar {
             width: 36px;
@@ -123,63 +177,83 @@
             font-weight: 600;
             font-size: 0.875rem;
         }
-        
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
-        
+
         /* Notification Styling */
         .notification-stok-menipis {
             background-color: #fee2e2;
             border-left: 4px solid #dc3545;
         }
-        
+
         .notification-stok-menipis:hover {
             background-color: #fecaca;
         }
-        
+
         .datetime-badge {
             background: linear-gradient(135deg, #0d6efd, #0b5ed7);
             padding: 0.5rem 1rem;
             border-radius: 50px;
         }
+
+        /* Tombol toggle sidebar */
+        .toggle-sidebar-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.25rem;
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        .toggle-sidebar-btn:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
     </style>
 </head>
+
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
         <div class="container-fluid px-4">
-            <!-- Logo Kiri -->
-            <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <i class="fas fa-microscope me-2"></i>
-                <span class="fw-bold">Sistem Lab AV & TV</span>
-            </a>
-            
+            <!-- Tombol Toggle Sidebar dan Logo -->
+            <div class="d-flex align-items-center">
+                <button class="toggle-sidebar-btn d-none d-md-block" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a class="navbar-brand ms-2" href="{{ route('dashboard') }}">
+                    <i class="fas fa-microscope me-2"></i>
+                    <span class="fw-bold">Sistem Lab AV & TV</span>
+                </a>
+            </div>
+
             <!-- Search Bar - Posisi Tengah -->
             <div class="flex-grow-1 d-flex justify-content-center mx-3">
                 <form action="{{ route('barang.index') }}" method="GET" class="d-flex w-100" style="max-width: 400px;">
                     <div class="position-relative w-100">
                         <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-white-50"></i>
-                        <input type="text" name="search" class="search-bar ps-5 w-100" placeholder="Cari barang, merk, atau kode..." 
-                               value="{{ request('search') }}">
+                        <input type="text" name="search" class="search-bar ps-5 w-100" placeholder="Cari barang, merk, atau kode..."
+                            value="{{ request('search') }}">
                     </div>
                 </form>
             </div>
-            
+
             <!-- Menu Kanan -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -206,7 +280,9 @@
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
                             <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Profil Saya</a></li>
                             <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Pengaturan</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -240,133 +316,153 @@
         </div>
     </div>
 
-    <div class="container-fluid p-0">
-        <div class="row g-0">
-            <!-- Sidebar -->
-            <nav class="col-md-2 col-lg-2 d-md-block sidebar p-0">
-                <div class="position-sticky pt-3" style="top: 60px;">
-                    <ul class="nav flex-column">
-                        <!-- Main Navigation -->
-                        <li class="nav-section-title">
-                            <i class="fas fa-compass me-1"></i> Main Navigation
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('barang.*') ? 'active' : '' }}" href="{{ route('barang.index') }}">
-                                <i class="fas fa-boxes me-2"></i>Data Barang
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-file-import me-2"></i>Pengajuan Barang
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('barang-masuk.*') ? 'active' : '' }}" href="{{ route('barang-masuk.index') }}">
-                                <i class="fas fa-truck-loading me-2"></i>Barang Datang
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-people-arrows me-2"></i>Distribusi ke Lab
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-chalkboard me-2"></i>Barang Digunakan
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-clipboard-list me-2"></i>Monitoring Kondisi
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-chart-line me-2"></i>Manajemen Stok
-                            </a>
-                        </li>
-                        
-                        <!-- Management & Reporting -->
-                        <li class="nav-section-title mt-3">
-                            <i class="fas fa-chart-simple me-1"></i> Management & Reporting
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('riwayat.*') ? 'active' : '' }}" href="{{ route('riwayat.aktivitas') }}">
-                                <i class="fas fa-history me-2"></i>Riwayat Aktivitas
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('laporan.*') ? 'active' : '' }}" href="{{ route('laporan.index') }}">
-                                <i class="fas fa-file-alt me-2"></i>Laporan
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-users me-2"></i>Manajemen User
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="fas fa-sliders-h me-2"></i>Pengaturan
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar sidebar-expanded" id="sidebar">
+            <div class="position-sticky pt-3" style="top: 0;">
+                <ul class="nav flex-column">
+                    <!-- Main Navigation -->
+                    <li class="nav-section-title">
+                        <i class="fas fa-compass me-1"></i> <span>Main Navigation</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-2"></i> <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('barang.*') ? 'active' : '' }}" href="{{ route('barang.index') }}">
+                            <i class="fas fa-boxes me-2"></i> <span>Data Barang</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('barang-masuk.*') ? 'active' : '' }}" href="{{ route('barang-masuk.index') }}">
+                            <i class="fas fa-truck-loading me-2"></i> <span>Barang Datang</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-chalkboard me-2"></i> <span>Barang Digunakan</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-clipboard-list me-2"></i> <span>Monitoring Kondisi</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-chart-line me-2"></i> <span>Manajemen Stok</span>
+                        </a>
+                    </li>
 
-            <!-- Main Content -->
-            <main class="col-md-10 col-lg-10 ms-sm-auto main-content">
-                <div class="px-4 py-4">
-                    @yield('content')
-                </div>
-            </main>
-        </div>
+                    <!-- Management & Reporting -->
+                    <li class="nav-section-title mt-3">
+                        <i class="fas fa-chart-simple me-1"></i> <span>Management & Reporting</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('riwayat.*') ? 'active' : '' }}" href="{{ route('riwayat.aktivitas') }}">
+                            <i class="fas fa-history me-2"></i> <span>Riwayat Aktivitas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('laporan.*') ? 'active' : '' }}" href="{{ route('laporan.index') }}">
+                            <i class="fas fa-file-alt me-2"></i> <span>Laporan</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-users me-2"></i> <span>Manajemen User</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-sliders-h me-2"></i> <span>Pengaturan</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="px-4 py-4">
+                @yield('content')
+            </div>
+        </main>
     </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- jQuery (opsional untuk beberapa fitur) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
     <script>
+        // Toggle sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            if (!sidebar || !toggleBtn) return;
+            
+            // Cek localStorage untuk menyimpan status sidebar
+            const sidebarState = localStorage.getItem('sidebarCollapsed');
+            if (sidebarState === 'true') {
+                sidebar.classList.remove('sidebar-expanded');
+                sidebar.classList.add('sidebar-collapsed');
+            } else {
+                sidebar.classList.remove('sidebar-collapsed');
+                sidebar.classList.add('sidebar-expanded');
+            }
+            
+            toggleBtn.addEventListener('click', function() {
+                if (sidebar.classList.contains('sidebar-expanded')) {
+                    sidebar.classList.remove('sidebar-expanded');
+                    sidebar.classList.add('sidebar-collapsed');
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                } else {
+                    sidebar.classList.remove('sidebar-collapsed');
+                    sidebar.classList.add('sidebar-expanded');
+                    localStorage.setItem('sidebarCollapsed', 'false');
+                }
+                // Trigger resize event untuk memastikan chart dan elemen lain menyesuaikan
+                window.dispatchEvent(new Event('resize'));
+            });
+        });
+
         // Aktifkan tooltip
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
-        
+
         // Update waktu real-time
         function updateDateTime() {
             const now = new Date();
-            const options = { 
-                hour: '2-digit', 
-                minute: '2-digit', 
+            const options = {
+                hour: '2-digit',
+                minute: '2-digit',
                 second: '2-digit',
                 hour12: false,
                 timeZone: 'Asia/Jakarta'
             };
             const timeString = now.toLocaleTimeString('id-ID', options);
-            const dateString = now.toLocaleDateString('id-ID', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            const dateString = now.toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             });
-            
+
             const dateTimeElement = document.getElementById('realTimeDateTime');
             if (dateTimeElement) {
                 dateTimeElement.innerHTML = `<i class="fas fa-calendar-alt me-1"></i> ${dateString} | <i class="fas fa-clock me-1"></i> ${timeString} WIB`;
             }
         }
-        
+
         // Update setiap detik
         setInterval(updateDateTime, 1000);
         updateDateTime();
     </script>
 </body>
+
 </html>

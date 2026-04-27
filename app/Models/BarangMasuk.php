@@ -11,8 +11,27 @@ class BarangMasuk extends Model
 
     protected $table = 'barang_masuk';
     protected $primaryKey = 'id_masuk';
+
+    // app/Models/BarangMasuk.php
+
     protected $fillable = [
-        'id_barang', 'jumlah_masuk', 'tanggal_masuk', 'semester', 'sumber', 'id_user'
+        'id_barang',
+        'jumlah_masuk',
+        'tanggal_masuk',
+        'semester',
+        'sumber',
+        'id_user',
+        'status',
+        'bukti_foto',
+        'id_penanggung_jawab',
+        'kondisi_penerimaan',
+        'catatan_pemeriksaan'
+    ];
+
+    protected $casts = [
+        'tanggal_masuk' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     public function barang()
@@ -23,5 +42,11 @@ class BarangMasuk extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    // Relasi ke penanggung jawab (pemeriksa)
+    public function penanggungJawab()
+    {
+        return $this->belongsTo(PenanggungJawab::class, 'id_penanggung_jawab');
     }
 }
