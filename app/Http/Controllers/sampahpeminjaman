@@ -1,0 +1,233 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Barang;
+use App\Models\Peminjaman;
+use App\Models\LogAktivitas;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
+class PeminjamanController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Peminjaman::with(['barang', 'user'])->orderBy('tanggal_penggunaan', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_peminjam', 'like', "%{$search}%")
+                    ->orWhere('email_peminjam', 'like', "%{$search}%")
+                    ->orWhereHas('barang', function ($q2) use ($search) {
+                        $q2->where('nama_barang', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $peminjaman = $query->paginate(10)->withQueryString();
+
+        return view('peminjaman.index', compact('peminjaman'));
+    }
+
+    public function create()
+    {
+        $barang = Barang::orderBy('nama_barang')->get();
+        return view('peminjaman.create', compact('barang'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'id_barang' => 'required|exists:barang,id_barang',
+            'jumlah_dipakai' => 'required|integer|min:1',
+            'tanggal_penggunaan' => 'required|date',
+            'tanggal_jatuh_tempo' => 'required|date|after_or_equal:tanggal_penggunaan',
+            'nama_peminjam' => 'required|string|max:255',
+            'email_peminjam' => 'required|email|max:255',
+            'surat_peminjaman' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'catatan' => 'nullable|string',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $barang = Barang::find($request->id_barang);
+            if ($barang->stok < $request->jumlah_dipakai) {
+                return back()->with('error', 'Stok barang tidak mencukupi. Stok tersedia: ' . $barang->stok);
+            }
+
+            $data = $request->except('surat_peminjaman');
+            $data['id_user'] = Auth::id();
+            $data['status'] = 'sedang_digunakan'; // otomatis
+
+            if ($request->hasFile('surat_peminjaman')) {
+                $data['surat_peminjaman'] = $request->file('surat_peminjaman')->store('surat_peminjaman', 'public');
+            }
+
+            $peminjaman = Peminjaman::create($data);
+            $barang->decrement('stok', $data['jumlah_dipakai']);
+
+            LogAktivitas::create([
+                'id_user' => Auth::id(),
+                'aktivitas' => 'Peminjaman Barang',
+                'deskripsi' => "Meminjam barang {$barang->nama_barang} sebanyak {$data['jumlah_dipakai']} unit oleh {$data['nama_peminjam']}, jatuh tempo {$data['tanggal_jatuh_tempo']}",
+            ]);
+
+            DB::commit();
+            return redirect()->route('peminjaman.index')->with('success', 'Data peminjaman berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function show($id)
+    {
+        $peminjaman = Peminjaman::with(['barang', 'user'])->findOrFail($id);
+        return view('peminjaman.show', compact('peminjaman'));
+    }
+
+    public function edit($id)
+    {
+        $peminjaman = Peminjaman::findOrFail($id);
+        $barang = Barang::orderBy('nama_barang')->get();
+        return view('peminjaman.edit', compact('peminjaman', 'barang'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $peminjaman = Peminjaman::findOrFail($id);
+
+        $request->validate([
+            'id_barang' => 'required|exists:barang,id_barang',
+            'jumlah_dipakai' => 'required|integer|min:1',
+            'tanggal_penggunaan' => 'required|date',
+            'tanggal_pengembalian' => 'nullable|date|after_or_equal:tanggal_penggunaan',
+            'nama_peminjam' => 'required|string|max:255',
+            'email_peminjam' => 'required|email|max:255',
+            'status' => 'required|in:sedang_digunakan,sudah_kembali,terlambat',
+            'kondisi_setelah' => 'nullable|in:baik,rusak,hilang',
+            'catatan' => 'nullable|string',
+            'surat_peminjaman' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $barang = Barang::find($request->id_barang);
+            $jumlahLama = $peminjaman->jumlah_dipakai;
+            $statusLama = $peminjaman->status;
+
+            $data = $request->except('surat_peminjaman');
+
+            if ($request->hasFile('surat_peminjaman')) {
+                if ($peminjaman->surat_peminjaman) {
+                    Storage::disk('public')->delete($peminjaman->surat_peminjaman);
+                }
+                $data['surat_peminjaman'] = $request->file('surat_peminjaman')->store('surat_peminjaman', 'public');
+            }
+
+            // Sinkronisasi stok
+            if ($statusLama == 'sedang_digunakan') {
+                // Kembalikan stok lama
+                $barang->increment('stok', $jumlahLama);
+            }
+
+            $peminjaman->update($data);
+
+            if ($data['status'] == 'sedang_digunakan') {
+                // Kurangi stok baru
+                $barang->decrement('stok', $data['jumlah_dipakai']);
+            }
+
+            LogAktivitas::create([
+                'id_user' => Auth::id(),
+                'aktivitas' => 'Update Peminjaman Barang',
+                'deskripsi' => "Mengupdate peminjaman barang {$barang->nama_barang}",
+            ]);
+
+            DB::commit();
+            return redirect()->route('peminjaman.index')->with('success', 'Data peminjaman berhasil diupdate.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy($id)
+    {
+        $peminjaman = Peminjaman::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            if ($peminjaman->status == 'sedang_digunakan') {
+                // Kembalikan stok
+                $barang = $peminjaman->barang;
+                $barang->increment('stok', $peminjaman->jumlah_dipakai);
+            }
+
+            if ($peminjaman->surat_peminjaman) {
+                Storage::disk('public')->delete($peminjaman->surat_peminjaman);
+            }
+
+            $peminjaman->delete();
+
+            LogAktivitas::create([
+                'id_user' => Auth::id(),
+                'aktivitas' => 'Hapus Peminjaman Barang',
+                'deskripsi' => "Menghapus data peminjaman",
+            ]);
+
+            DB::commit();
+            return redirect()->route('peminjaman.index')->with('success', 'Data peminjaman berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    public function formPengembalian($id)
+    {
+        $peminjaman = Peminjaman::with('barang')->findOrFail($id);
+        return view('peminjaman.pengembalian', compact('peminjaman'));
+    }
+
+    public function prosesPengembalian(Request $request, $id)
+    {
+        $request->validate([
+            'tanggal_pengembalian' => 'required|date',
+            'kondisi_setelah' => 'required|in:baik,rusak,hilang',
+            'catatan' => 'nullable|string',
+        ]);
+
+        $peminjaman = Peminjaman::findOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            // Kembalikan stok barang
+            $barang = $peminjaman->barang;
+            $barang->increment('stok', $peminjaman->jumlah_dipakai);
+
+            // Update peminjaman
+            $peminjaman->update([
+                'tanggal_pengembalian' => $request->tanggal_pengembalian,
+                'kondisi_setelah' => $request->kondisi_setelah,
+                'catatan' => $request->catatan,
+                'status' => 'sudah_kembali',
+            ]);
+
+            LogAktivitas::create([
+                'id_user' => Auth::id(),
+                'aktivitas' => 'Pengembalian Barang',
+                'deskripsi' => "Pengembalian barang {$barang->nama_barang} oleh {$peminjaman->nama_peminjam}",
+            ]);
+
+            DB::commit();
+            return redirect()->route('peminjaman.index')->with('success', 'Barang berhasil dikembalikan.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+}

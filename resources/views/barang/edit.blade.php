@@ -19,15 +19,15 @@
 
     <!-- Menampilkan error jika ada -->
     @if ($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show rounded-4 mb-4" role="alert">
-            <strong>Terjadi kesalahan!</strong>
-            <ul class="mb-0 mt-2">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show rounded-4 mb-4" role="alert">
+        <strong>Terjadi kesalahan!</strong>
+        <ul class="mb-0 mt-2">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     @endif
 
     <!-- Form Card -->
@@ -40,31 +40,31 @@
                 <div class="row g-3">
                     <!-- Kode Barang -->
                     <div class="col-md-6">
-                        <label class="form-label small fw-semibold">Kode Barang <span class="text-danger">*</span></label>
-                        <input type="text" name="kode_barang" class="form-control form-control-sm rounded-pill @error('kode_barang') is-invalid @enderror" 
-                               value="{{ old('kode_barang', $barang->kode_barang) }}" required>
+                        <label class="form-label small fw-semibold">Kode Barang</label>
+                        <input type="text" name="kode_barang" class="form-control form-control-sm rounded-pill @error('kode_barang') is-invalid @enderror"
+                            value="{{ old('kode_barang', $barang->kode_barang) }}" readonly>
                         @error('kode_barang')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Nama Barang -->
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Nama Barang <span class="text-danger">*</span></label>
-                        <input type="text" name="nama_barang" class="form-control form-control-sm rounded-pill @error('nama_barang') is-invalid @enderror" 
-                               value="{{ old('nama_barang', $barang->nama_barang) }}" required>
+                        <input type="text" name="nama_barang" class="form-control form-control-sm rounded-pill @error('nama_barang') is-invalid @enderror"
+                            value="{{ old('nama_barang', $barang->nama_barang) }}" required>
                         @error('nama_barang')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Merk -->
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Merk</label>
-                        <input type="text" name="merk" class="form-control form-control-sm rounded-pill @error('merk') is-invalid @enderror" 
-                               value="{{ old('merk', $barang->merk) }}">
+                        <input type="text" name="merk" class="form-control form-control-sm rounded-pill @error('merk') is-invalid @enderror"
+                            value="{{ old('merk', $barang->merk) }}">
                         @error('merk')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -74,41 +74,41 @@
                         <select name="id_lokasi" class="form-select form-select-sm rounded-pill @error('id_lokasi') is-invalid @enderror" required>
                             <option value="">Pilih Lokasi</option>
                             @foreach($lokasi as $l)
-                                <option value="{{ $l->id_lokasi }}" {{ old('id_lokasi', $barang->id_lokasi) == $l->id_lokasi ? 'selected' : '' }}>
-                                    {{ $l->nama_lokasi }}
-                                </option>
+                            <option value="{{ $l->id_lokasi }}" {{ old('id_lokasi', $barang->id_lokasi) == $l->id_lokasi ? 'selected' : '' }}>
+                                {{ $l->nama_lokasi }}
+                            </option>
                             @endforeach
                         </select>
                         @error('id_lokasi')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Jumlah Baik, Rusak, Hilang -->
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Jumlah Baik <span class="text-danger">*</span></label>
-                        <input type="number" name="jumlah_baik" id="jumlah_baik" class="form-control form-control-sm rounded-pill @error('jumlah_baik') is-invalid @enderror" 
-                               value="{{ old('jumlah_baik', $barang->jumlah_baik) }}" min="0" required>
+                        <input type="number" name="jumlah_baik" id="jumlah_baik" class="form-control form-control-sm rounded-pill @error('jumlah_baik') is-invalid @enderror"
+                            value="{{ old('jumlah_baik', $barang->jumlah_baik) }}" min="0" required>
                         @error('jumlah_baik')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Jumlah Rusak</label>
-                        <input type="number" name="jumlah_rusak" id="jumlah_rusak" class="form-control form-control-sm rounded-pill @error('jumlah_rusak') is-invalid @enderror" 
-                               value="{{ old('jumlah_rusak', $barang->jumlah_rusak ?? 0) }}" min="0">
+                        <input type="number" name="jumlah_rusak" id="jumlah_rusak" class="form-control form-control-sm rounded-pill @error('jumlah_rusak') is-invalid @enderror"
+                            value="{{ old('jumlah_rusak', $barang->jumlah_rusak ?? 0) }}" min="0">
                         @error('jumlah_rusak')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Jumlah Hilang</label>
-                        <input type="number" name="jumlah_hilang" id="jumlah_hilang" class="form-control form-control-sm rounded-pill @error('jumlah_hilang') is-invalid @enderror" 
-                               value="{{ old('jumlah_hilang', $barang->jumlah_hilang ?? 0) }}" min="0">
+                        <input type="number" name="jumlah_hilang" id="jumlah_hilang" class="form-control form-control-sm rounded-pill @error('jumlah_hilang') is-invalid @enderror"
+                            value="{{ old('jumlah_hilang', $barang->jumlah_hilang ?? 0) }}" min="0">
                         @error('jumlah_hilang')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -128,48 +128,48 @@
                             <option value="Genap" {{ old('semester', $barang->semester) == 'Genap' ? 'selected' : '' }}>Genap</option>
                         </select>
                         @error('semester')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Tahun Ajaran -->
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold">Tahun Ajaran</label>
-                        <input type="text" name="tahun_ajaran" class="form-control form-control-sm rounded-pill @error('tahun_ajaran') is-invalid @enderror" 
-                               value="{{ old('tahun_ajaran', $barang->tahun_ajaran) }}" placeholder="Contoh: 2024/2025">
+                        <input type="text" name="tahun_ajaran" class="form-control form-control-sm rounded-pill @error('tahun_ajaran') is-invalid @enderror"
+                            value="{{ old('tahun_ajaran', $barang->tahun_ajaran) }}" placeholder="Contoh: 2024/2025">
                         @error('tahun_ajaran')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Kapasitas -->
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Kapasitas Alat</label>
-                        <input type="text" name="kapasitas" class="form-control form-control-sm rounded-pill @error('kapasitas') is-invalid @enderror" 
-                               value="{{ old('kapasitas', $barang->kapasitas) }}" placeholder="Contoh: 2 pengguna, 100 sampel">
+                        <input type="text" name="kapasitas" class="form-control form-control-sm rounded-pill @error('kapasitas') is-invalid @enderror"
+                            value="{{ old('kapasitas', $barang->kapasitas) }}" placeholder="Contoh: 2 pengguna, 100 sampel">
                         <small class="text-muted">Isi dengan kapasitas pemeriksaan atau penggunaan alat.</small>
                         @error('kapasitas')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Keterangan -->
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Keterangan</label>
-                        <input type="text" name="keterangan" class="form-control form-control-sm rounded-pill @error('keterangan') is-invalid @enderror" 
-                               value="{{ old('keterangan', $barang->keterangan) }}">
+                        <input type="text" name="keterangan" class="form-control form-control-sm rounded-pill @error('keterangan') is-invalid @enderror"
+                            value="{{ old('keterangan', $barang->keterangan) }}">
                         @error('keterangan')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <!-- Deskripsi -->
                     <div class="col-12">
                         <label class="form-label small fw-semibold">Deskripsi</label>
-                        <textarea name="deskripsi" class="form-control form-control-sm @error('deskripsi') is-invalid @enderror" rows="3" 
-                                  style="border-radius: 20px;">{{ old('deskripsi', $barang->deskripsi) }}</textarea>
+                        <textarea name="deskripsi" class="form-control form-control-sm @error('deskripsi') is-invalid @enderror" rows="3"
+                            style="border-radius: 20px;">{{ old('deskripsi', $barang->deskripsi) }}</textarea>
                         @error('deskripsi')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -178,15 +178,15 @@
                         <label class="form-label small fw-semibold">Penanggung Jawab</label>
                         <select name="penanggung_jawab[]" class="form-select form-select-sm @error('penanggung_jawab') is-invalid @enderror" multiple size="3" style="border-radius: 20px;">
                             @foreach($penanggungJawab as $pj)
-                                <option value="{{ $pj->id_pj }}" 
-                                    {{ in_array($pj->id_pj, old('penanggung_jawab', $barang->penanggungJawab->pluck('id_pj')->toArray())) ? 'selected' : '' }}>
-                                    {{ $pj->nama_pj }} ({{ $pj->email ?? '-' }})
-                                </option>
+                            <option value="{{ $pj->id_pj }}"
+                                {{ in_array($pj->id_pj, old('penanggung_jawab', $barang->penanggungJawab->pluck('id_pj')->toArray())) ? 'selected' : '' }}>
+                                {{ $pj->nama_pj }} ({{ $pj->email ?? '-' }})
+                            </option>
                             @endforeach
                         </select>
                         <small class="text-muted">Tekan Ctrl untuk memilih lebih dari satu</small>
                         @error('penanggung_jawab')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
@@ -228,8 +228,7 @@
     function hitungTotal() {
         const baik = parseInt(document.getElementById('jumlah_baik').value) || 0;
         const rusak = parseInt(document.getElementById('jumlah_rusak').value) || 0;
-        const hilang = parseInt(document.getElementById('jumlah_hilang').value) || 0;
-        const total = baik + rusak + hilang;
+        const total = baik + rusak;
         document.getElementById('total_stok').value = total;
     }
 

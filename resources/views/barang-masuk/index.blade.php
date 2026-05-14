@@ -112,7 +112,7 @@
                             <th>Bukti Foto</th>
                             <th>Status</th>
                             <th class="pe-2">Aksi</th>
-                        </td>
+                        </tr>
                     </thead>
                     <tbody>
                         @forelse($barangMasuk as $bm)
@@ -143,10 +143,12 @@
                                 <a href="{{ route('barang-masuk.detail-pemeriksaan', $bm->id_masuk) }}" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="Detail Pemeriksaan">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <!-- Tombol untuk mengisi kondisi awal sekaligus konfirmasi penerimaan (centang hijau) -->
-                                <a href="{{ route('barang-masuk.kondisi-awal', $bm->id_masuk) }}" class="btn btn-sm btn-outline-success rounded-pill me-1" title="Isi Kondisi Awal & Konfirmasi">
-                                    <i class="fas fa-check-circle"></i>
-                                </a>
+                                <!-- Tombol untuk mengisi kondisi awal sekaligus konfirmasi penerimaan (centang hijau) - hanya jika status menunggu -->
+                                @if($bm->status == 'menunggu')
+                                    <a href="{{ route('barang-masuk.kondisi-awal', $bm->id_masuk) }}" class="btn btn-sm btn-outline-success rounded-pill me-1" title="Isi Kondisi Awal & Konfirmasi">
+                                        <i class="fas fa-check-circle"></i>
+                                    </a>
+                                @endif
                                 <a href="{{ route('barang-masuk.edit', $bm->id_masuk) }}" class="btn btn-sm btn-outline-secondary rounded-pill me-1" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -158,7 +160,7 @@
                                     </button>
                                 </form>
                             </td>
-                        </tr>
+                        <tr>
                         @empty
                         <tr>
                             <td colspan="8" class="text-center py-4 text-muted">Belum ada data penerimaan barang</td>

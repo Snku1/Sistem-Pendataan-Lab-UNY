@@ -341,18 +341,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-chalkboard me-2"></i> <span>Barang Digunakan</span>
+                        <a class="nav-link {{ request()->routeIs('peminjaman.*') && !request()->routeIs('peminjaman.riwayat') ? 'active' : '' }}" href="{{ route('peminjaman.index') }}">
+                            <i class="fas fa-chalkboard me-2"></i><span>Peminjaman Barang</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-clipboard-list me-2"></i> <span>Monitoring Kondisi</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fas fa-chart-line me-2"></i> <span>Manajemen Stok</span>
+                        <a class="nav-link {{ request()->routeIs('peminjaman.riwayat') ? 'active' : '' }}" href="{{ route('peminjaman.riwayat') }}">
+                            <i class="fas fa-history me-2"></i><span>Riwayat Peminjaman</span>
                         </a>
                     </li>
 
@@ -361,13 +356,23 @@
                         <i class="fas fa-chart-simple me-1"></i> <span>Management & Reporting</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('riwayat.*') ? 'active' : '' }}" href="{{ route('riwayat.aktivitas') }}">
-                            <i class="fas fa-history me-2"></i> <span>Riwayat Aktivitas</span>
+                        <a class="nav-link {{ request()->routeIs('stok.*') ? 'active' : '' }}" href="{{ route('stok.index') }}">
+                            <i class="fas fa-chart-line me-2"></i> <span>Manajemen Stok</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('stok-opname.*') ? 'active' : '' }}" href="{{ route('stok-opname.index') }}">
+                            <i class="fas fa-clipboard-check me-2"></i> <span>Stok Opname</span>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('laporan.*') ? 'active' : '' }}" href="{{ route('laporan.index') }}">
                             <i class="fas fa-file-alt me-2"></i> <span>Laporan</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('riwayat.*') ? 'active' : '' }}" href="{{ route('riwayat.aktivitas') }}">
+                            <i class="fas fa-history me-2"></i> <span>Riwayat Aktivitas</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -404,7 +409,7 @@
             const sidebar = document.getElementById('sidebar');
             const toggleBtn = document.getElementById('sidebarToggle');
             if (!sidebar || !toggleBtn) return;
-            
+
             // Cek localStorage untuk menyimpan status sidebar
             const sidebarState = localStorage.getItem('sidebarCollapsed');
             if (sidebarState === 'true') {
@@ -414,7 +419,7 @@
                 sidebar.classList.remove('sidebar-collapsed');
                 sidebar.classList.add('sidebar-expanded');
             }
-            
+
             toggleBtn.addEventListener('click', function() {
                 if (sidebar.classList.contains('sidebar-expanded')) {
                     sidebar.classList.remove('sidebar-expanded');

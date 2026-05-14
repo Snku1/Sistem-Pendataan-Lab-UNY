@@ -14,6 +14,19 @@ use Illuminate\Support\Facades\Log;
 
 class BarangController extends Controller
 {
+    // Helper untuk generate kode barang otomatis
+    private function generateKodeBarang()
+    {
+        $lastBarang = Barang::orderBy('id_barang', 'desc')->first();
+        if ($lastBarang && $lastBarang->kode_barang) {
+            $lastNumber = intval(substr($lastBarang->kode_barang, 2));
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+        return 'AV' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
     public function index(Request $request)
     {
         $query = Barang::with(['lokasi', 'penanggungJawab']);
@@ -77,13 +90,14 @@ class BarangController extends Controller
     {
         $lokasi = Lokasi::all();
         $penanggungJawab = PenanggungJawab::all();
-        return view('barang.create', compact('lokasi', 'penanggungJawab'));
+        $kodeBarangOtomatis = $this->generateKodeBarang();
+        return view('barang.create', compact('lokasi', 'penanggungJawab', 'kodeBarangOtomatis'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'kode_barang' => 'required|string|max:255|unique:barang,kode_barang',
+            'kode_barang' => 'nullable|string|max:255|unique:barang,kode_barang',
             'nama_barang' => 'required|string|max:255',
             'merk' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -101,9 +115,15 @@ class BarangController extends Controller
         DB::beginTransaction();
         try {
             $data = $request->except('penanggung_jawab');
+
+            // Generate kode barang jika kosong
+            if (empty($data['kode_barang'])) {
+                $data['kode_barang'] = $this->generateKodeBarang();
+            }
+
             $data['jumlah_rusak'] = $data['jumlah_rusak'] ?? 0;
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
-            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
+            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'];
 
             $barang = Barang::create($data);
             if ($request->has('penanggung_jawab')) {
@@ -141,9 +161,6 @@ class BarangController extends Controller
 
     public function update(Request $request, $id)
     {
-        // Debug: lihat data yang masuk
-        // dd($request->all());
-
         $barang = Barang::findOrFail($id);
 
         $validator = validator($request->all(), [
@@ -171,7 +188,7 @@ class BarangController extends Controller
             $data = $request->except('penanggung_jawab');
             $data['jumlah_rusak'] = $data['jumlah_rusak'] ?? 0;
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
-            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
+            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'];
 
             $barang->update($data);
             $barang->penanggungJawab()->sync($request->penanggung_jawab ?? []);
@@ -186,7 +203,6 @@ class BarangController extends Controller
             return redirect()->route('barang.index')->with('success', 'Barang berhasil diupdate.');
         } catch (\Exception $e) {
             DB::rollBack();
-            // Simpan error ke log
             \Log::error('Update error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }

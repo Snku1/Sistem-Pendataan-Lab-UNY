@@ -5,26 +5,17 @@ use App\Http\Controllers\BarangController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\RiwayatController;
 use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\PeminjamanController;
-use App\Http\Controllers\StokController;
-use App\Http\Controllers\StokOpnameController;
 use Illuminate\Support\Facades\Route;
 
-// Route home / landing page
 Route::get('/', function () {
     return redirect('/login');
 });
 
-// Auth routes (dari Breeze)
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
 
-// ==================== ROUTE YANG MEMERLUKAN LOGIN ====================
 Route::middleware(['auth'])->group(function () {
-
-    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // ==================== MANAJEMEN BARANG (CRUD) ====================
+    
     Route::prefix('barang')->name('barang.')->group(function () {
         Route::get('/', [BarangController::class, 'index'])->name('index');
         Route::get('/create', [BarangController::class, 'create'])->name('create');
@@ -33,8 +24,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [BarangController::class, 'update'])->name('update');
         Route::delete('/{id}', [BarangController::class, 'destroy'])->name('destroy');
     });
-
-    // ==================== BARANG MASUK ====================
+    
     Route::prefix('barang-masuk')->name('barang-masuk.')->group(function () {
         Route::get('/', [BarangMasukController::class, 'index'])->name('index');
         Route::get('/create', [BarangMasukController::class, 'create'])->name('create');
@@ -49,53 +39,30 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{id}/kondisi-awal', [BarangMasukController::class, 'editKondisiAwal'])->name('kondisi-awal');
         Route::put('/{id}/kondisi-awal', [BarangMasukController::class, 'updateKondisiAwal'])->name('update-kondisi-awal');
     });
-
-    // ==================== BARANG DIGUNAKAN (PEMINJAMAN) ====================
-    Route::prefix('peminjaman')->name('peminjaman.')->group(function () {
-        Route::get('/', [PeminjamanController::class, 'index'])->name('index');
-        Route::get('/riwayat', [PeminjamanController::class, 'riwayat'])->name('riwayat');
-        Route::get('/create', [PeminjamanController::class, 'create'])->name('create');
-        Route::post('/', [PeminjamanController::class, 'store'])->name('store');
-        Route::get('/{id}', [PeminjamanController::class, 'show'])->name('show');
-        Route::get('/{id}/pengembalian', [PeminjamanController::class, 'formPengembalian'])->name('form-pengembalian');
-        Route::put('/{id}/pengembalian', [PeminjamanController::class, 'prosesPengembalian'])->name('proses-pengembalian');
-        Route::delete('/{id}', [PeminjamanController::class, 'destroy'])->name('destroy');
+    
+    Route::prefix('monitoring')->name('monitoring.')->group(function () {
+        Route::get('/kondisi', [BarangController::class, 'monitoringKondisi'])->name('kondisi');
+        Route::patch('/{id}/kondisi', [BarangController::class, 'updateKondisi'])->name('update-kondisi');
     });
-
-    // ==================== MANAJEMEN STOK ====================
-    //    Route::prefix('stok')->name('stok.')->group(function () {
-    //        Route::get('/', [BarangController::class, 'manajemenStok'])->name('index');
-    //        Route::get('/menipis', [BarangController::class, 'stokMenipis'])->name('menipis');
-    //    });
+    
     Route::prefix('stok')->name('stok.')->group(function () {
-        Route::get('/', [StokController::class, 'index'])->name('index');
+        Route::get('/', [BarangController::class, 'manajemenStok'])->name('index');
+        Route::get('/menipis', [BarangController::class, 'stokMenipis'])->name('menipis');
     });
-
-    Route::prefix('stok-opname')->name('stok-opname.')->group(function () {
-        Route::get('/', [StokOpnameController::class, 'index'])->name('index');
-        Route::get('/create', [StokOpnameController::class, 'create'])->name('create');
-        Route::post('/', [StokOpnameController::class, 'store'])->name('store');
-        Route::get('/{id}', [StokOpnameController::class, 'show'])->name('show');
-        Route::delete('/{id}', [StokOpnameController::class, 'destroy'])->name('destroy');
-    });
-
-    // ==================== RIWAYAT ====================
+    
     Route::prefix('riwayat')->name('riwayat.')->group(function () {
         Route::get('/stok', [RiwayatController::class, 'stok'])->name('stok');
         Route::get('/kondisi', [RiwayatController::class, 'kondisi'])->name('kondisi');
         Route::get('/aktivitas', [RiwayatController::class, 'aktivitas'])->name('aktivitas');
         Route::get('/barang-masuk', [RiwayatController::class, 'barangMasuk'])->name('barang-masuk');
-        Route::get('/peminjaman', [RiwayatController::class, 'peminjaman'])->name('peminjaman');
     });
-
-    // ==================== LAPORAN ====================
+    
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::get('/stok', [LaporanController::class, 'stok'])->name('stok');
         Route::get('/barang-rusak', [LaporanController::class, 'barangRusak'])->name('barang-rusak');
         Route::get('/barang-hilang', [LaporanController::class, 'barangHilang'])->name('barang-hilang');
         Route::get('/semester', [LaporanController::class, 'perSemester'])->name('semester');
-        Route::get('/peminjaman', [LaporanController::class, 'peminjaman'])->name('peminjaman');
         Route::get('/export-pdf/{jenis}', [LaporanController::class, 'exportPdf'])->name('export-pdf');
         Route::get('/export-excel/{jenis}', [LaporanController::class, 'exportExcel'])->name('export-excel');
     });

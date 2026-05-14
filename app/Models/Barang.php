@@ -27,13 +27,6 @@ class Barang extends Model
         'tahun_ajaran'
     ];
 
-    // Accessor untuk stok baik
-    public function getStokBaikAttribute()
-    {
-        return $this->stok - ($this->jumlah_rusak ?? 0) - ($this->jumlah_hilang ?? 0);
-    }
-
-
     // Relasi (tetap sama)
     public function lokasi()
     {
