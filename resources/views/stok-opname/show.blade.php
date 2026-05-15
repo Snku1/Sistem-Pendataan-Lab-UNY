@@ -20,13 +20,13 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body">
-                    <h5>Informasi Opname</h5>
+                    <h5 class="fw-semibold mb-3">Informasi Opname</h5>
                     <table class="table table-sm">
-                        <tr><th>Kode</th><td>{{ $opname->kode_opname }}</tr>
-                        <tr><th>Tanggal</th><td>{{ \Carbon\Carbon::parse($opname->tanggal_opname)->translatedFormat('d F Y') }}</tr>
-                        <tr><th>Keterangan</th><td>{{ $opname->keterangan ?? '-' }}</tr>
-                        <tr><th>Dibuat Oleh</th><td>{{ $opname->user->nama ?? '-' }}</tr>
-                        <tr><th>Tanggal Input</th><td>{{ $opname->created_at->format('d M Y H:i') }}</tr>
+                        <tr><th style="width: 35%">Kode</th><td>{{ $opname->kode_opname }}</td></tr>
+                        <tr><th>Tanggal</th><td>{{ \Carbon\Carbon::parse($opname->tanggal_opname)->translatedFormat('d F Y') }}</td></tr>
+                        <tr><th>Keterangan</th><td>{{ $opname->keterangan ?? '-' }}</td></tr>
+                        <tr><th>Dibuat Oleh</th><td>{{ $opname->user->nama ?? '-' }}</td></tr>
+                        <tr><th>Tanggal Input</th><td>{{ $opname->created_at->format('d M Y H:i') }}</td></tr>
                     </table>
                 </div>
             </div>
@@ -46,6 +46,7 @@
                             <th>Stok Sistem</th>
                             <th>Stok Fisik</th>
                             <th>Selisih</th>
+                            <th>Keterangan</th>
                             <th>Catatan</th>
                         </tr>
                     </thead>
@@ -56,7 +57,19 @@
                             <td>{{ $detail->stok_sistem }}</td>
                             <td>{{ $detail->stok_fisik }}</td>
                             <td class="{{ $detail->selisih < 0 ? 'text-danger' : ($detail->selisih > 0 ? 'text-success' : '') }}">
-                                {{ $detail->selisih }}
+                                {{ $detail->selisih > 0 ? '+' . $detail->selisih : $detail->selisih }}
+                            </td>
+                            <td>
+                                @php
+                                    $status = '';
+                                    if ($detail->selisih == 0) $status = 'Sesuai';
+                                    elseif ($detail->selisih > 0) $status = 'Kelebihan';
+                                    else $status = 'Kekurangan';
+                                @endphp
+                                <span class="badge 
+                                    {{ $status == 'Sesuai' ? 'bg-success' : ($status == 'Kelebihan' ? 'bg-warning' : 'bg-danger') }}">
+                                    {{ $status }}
+                                </span>
                             </td>
                             <td>{{ $detail->catatan ?? '-' }}</td>
                         </tr>

@@ -16,6 +16,35 @@
         </div>
     </div>
 
+    <!-- Filter -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold">Cari Kode Opname</label>
+                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Kode opname...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Awal</label>
+                    <input type="date" name="tanggal_awal" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_awal') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Akhir</label>
+                    <input type="date" name="tanggal_akhir" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_akhir') }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
+                        <i class="fas fa-filter me-1"></i> Filter
+                    </button>
+                    <a href="{{ route('stok-opname.index') }}" class="btn btn-secondary rounded-pill flex-grow-1">
+                        <i class="fas fa-undo me-1"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabel (tetap) -->
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-transparent border-0 pt-3">
             <h5 class="fw-semibold mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Daftar Stok Opname</h5>

@@ -72,23 +72,32 @@
         </div>
     </div>
 
-    <!-- Filter (sama seperti sebelumnya) -->
+    <!-- Filter -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
-            <form method="GET" class="row g-3">
-                <div class="col-md-9">
-                    <label class="form-label small fw-semibold">Cari</label>
-                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Cari kode transaksi, nama peminjam, atau email...">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold">Cari Peminjaman</label>
+                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Kode, nama, email...">
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary rounded-pill w-100 me-2">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Awal</label>
+                    <input type="date" name="tanggal_awal" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_awal') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Akhir</label>
+                    <input type="date" name="tanggal_akhir" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_akhir') }}">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
-                    <a href="{{ route('peminjaman.riwayat') }}" class="btn btn-secondary rounded-pill w-100">
+                    <a href="{{ route('peminjaman.riwayat') }}" class="btn btn-secondary rounded-pill flex-grow-1">
                         <i class="fas fa-undo me-1"></i> Reset
                     </a>
                 </div>
             </form>
+            <small class="text-muted mt-2 d-block">Filter berdasarkan tanggal pengembalian barang (tanggal kembali aktual).</small>
         </div>
     </div>
 

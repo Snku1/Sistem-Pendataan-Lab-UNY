@@ -77,7 +77,7 @@
         <div class="card-body">
             <form method="GET" class="row g-3">
                 <div class="col-md-9">
-                    <label class="form-label small fw-semibold">Cari</label>
+                    <label class="form-label small fw-semibold">Cari Peminjaman</label>
                     <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Cari kode transaksi, nama peminjam, atau email...">
                 </div>
                 <div class="col-md-3 d-flex align-items-end">

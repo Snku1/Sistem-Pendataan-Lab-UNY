@@ -63,6 +63,18 @@ class PeminjamanController extends Controller
             });
         }
 
+        // Filter tanggal awal & akhir (berdasarkan tanggal kembali)
+        if ($request->filled('tanggal_awal') || $request->filled('tanggal_akhir')) {
+            $query->whereHas('details', function ($q) use ($request) {
+                if ($request->filled('tanggal_awal')) {
+                    $q->where('tanggal_kembali_aktual', '>=', $request->tanggal_awal);
+                }
+                if ($request->filled('tanggal_akhir')) {
+                    $q->where('tanggal_kembali_aktual', '<=', $request->tanggal_akhir);
+                }
+            });
+        }
+
         $peminjaman = $query->paginate(10)->withQueryString();
 
         // Statistik card

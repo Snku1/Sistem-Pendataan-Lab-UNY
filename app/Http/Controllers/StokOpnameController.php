@@ -16,9 +16,20 @@ class StokOpnameController extends Controller
     {
         $query = StokOpname::with('user')->orderBy('created_at', 'desc');
 
+        // Filter pencarian kode opname
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('kode_opname', 'like', "%{$search}%");
+        }
+
+        // Filter tanggal awal
+        if ($request->filled('tanggal_awal')) {
+            $query->whereDate('tanggal_opname', '>=', $request->tanggal_awal);
+        }
+
+        // Filter tanggal akhir
+        if ($request->filled('tanggal_akhir')) {
+            $query->whereDate('tanggal_opname', '<=', $request->tanggal_akhir);
         }
 
         $opnames = $query->paginate(10)->withQueryString();
@@ -28,7 +39,8 @@ class StokOpnameController extends Controller
 
     public function create()
     {
-        $barang = Barang::orderBy('nama_barang')->get();
+        // Ambil semua barang, urutkan berdasarkan kode atau nama
+        $barang = Barang::orderBy('kode_barang')->get();
         return view('stok-opname.create', compact('barang'));
     }
 
@@ -37,7 +49,7 @@ class StokOpnameController extends Controller
         $request->validate([
             'tanggal_opname' => 'required|date',
             'keterangan' => 'nullable|string',
-            'items' => 'required|array|min:1',
+            'items' => 'required|array',
             'items.*.id_barang' => 'required|exists:barang,id_barang',
             'items.*.stok_fisik' => 'required|integer|min:0',
         ]);
@@ -47,7 +59,7 @@ class StokOpnameController extends Controller
             $data = $request->only(['tanggal_opname', 'keterangan']);
             $data['kode_opname'] = StokOpname::generateKodeOpname();
             $data['id_user'] = Auth::id();
-            $data['status'] = 'selesai'; // langsung selesai karena input langsung
+            $data['status'] = 'selesai';
 
             $opname = StokOpname::create($data);
 
@@ -65,10 +77,6 @@ class StokOpnameController extends Controller
                     'selisih' => $selisih,
                     'catatan' => $item['catatan'] ?? null,
                 ]);
-
-                // Jika selisih tidak nol, kita bisa update stok sistem? Terserah kebijakan.
-                // Biasanya stok opname hanya catatan, tidak otomatis update stok.
-                // Jika ingin update stok, tambahkan kode di sini.
             }
 
             LogAktivitas::create([

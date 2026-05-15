@@ -7,8 +7,8 @@
     <!-- Header & Breadcrumb dengan tombol -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-1">Barang Datang</h2>
-            <p class="text-muted">Dashboard &gt; Barang Datang</p>
+            <h2 class="fw-bold text-dark mb-1">Manajemen Penerimaan Barang</h2>
+            <p class="text-muted mb-0">Kelola dan verifikasi setiap barang yang masuk ke laboratorium</p>
         </div>
         <div>
             <a href="{{ route('barang-masuk.create') }}" class="btn btn-primary rounded-pill">
@@ -60,21 +60,23 @@
         </div>
     </div>
 
-    <!-- Judul Tabel & Deskripsi -->
-    <div class="mb-3">
-        <h5 class="fw-semibold">Manajemen Penerimaan Barang</h5>
-        <p class="text-muted small">Kelola dan verifikasi setiap barang yang masuk ke laboratorium</p>
-    </div>
-
     <!-- Filter -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label small fw-semibold">Cari Barang</label>
                     <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Nama barang...">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Awal</label>
+                    <input type="date" name="tanggal_awal" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_awal') }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Akhir</label>
+                    <input type="date" name="tanggal_akhir" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_akhir') }}">
+                </div>
+                <div class="col-md-2">
                     <label class="form-label small fw-semibold">Status</label>
                     <select name="status" class="form-select form-select-sm rounded-pill">
                         <option value="">Semua Status</option>
@@ -82,11 +84,11 @@
                         <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Diterima</option>
                     </select>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary rounded-pill w-100 me-2">
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
-                    <a href="{{ route('barang-masuk.index') }}" class="btn btn-secondary rounded-pill w-100">
+                    <a href="{{ route('barang-masuk.index') }}" class="btn btn-secondary rounded-pill">
                         <i class="fas fa-undo me-1"></i> Reset
                     </a>
                 </div>
@@ -104,8 +106,8 @@
                 <table class="table table-bordered table-hover mb-0 align-middle" style="min-width: 1000px; font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
-                            <th class="ps-2">Nama Barang</th>
-                            <th>Tanggal Datang</th>
+                            <th class="ps-2">Tanggal Datang</th>
+                            <th>Nama Barang</th>
                             <th>Supplier / Sumber</th>
                             <th>Jumlah</th>
                             <th>Pemeriksa</th>
@@ -117,38 +119,42 @@
                     <tbody>
                         @forelse($barangMasuk as $bm)
                         <tr>
-                            <td class="ps-2">{{ $bm->barang->nama_barang ?? '-' }}</td>
-                            <td>{{ \Carbon\Carbon::parse($bm->tanggal_masuk)->translatedFormat('d M Y') }}</td>
+                            <td class="ps-2">{{ \Carbon\Carbon::parse($bm->tanggal_masuk)->translatedFormat('d M Y') }}</td>
+                            <td class="fw-semibold">{{ $bm->barang->nama_barang ?? '-' }}</td>
                             <td>{{ $bm->sumber ?? '-' }}</td>
                             <td>{{ $bm->jumlah_masuk }} {{ $bm->barang->satuan ?? 'unit' }}</td>
                             <td>{{ $bm->penanggungJawab->nama_pj ?? '-' }}</td>
                             <td>
                                 @if($bm->bukti_foto)
-                                    <a href="{{ Storage::url($bm->bukti_foto) }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill">
-                                        <i class="fas fa-image"></i> Lihat
-                                    </a>
+                                <a href="{{ Storage::url($bm->bukti_foto) }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill">
+                                    <i class="fas fa-image"></i> Lihat
+                                </a>
                                 @else
-                                    <span class="text-muted">-</span>
+                                <span class="text-muted">-</span>
                                 @endif
                             </td>
                             <td>
                                 @if($bm->status == 'menunggu')
-                                    <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-1 rounded-pill">Menunggu</span>
+                                <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-1 rounded-pill">Menunggu</span>
                                 @else
-                                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill">Diterima</span>
+                                <span class="badge bg-success bg-opacity-10 text-success px-3 py-1 rounded-pill">Diterima</span>
                                 @endif
                             </td>
                             <td class="pe-2">
-                                <!-- Detail pemeriksaan (mata) -->
+                                <!-- Tombol Detail Pemeriksaan (selalu ada) -->
                                 <a href="{{ route('barang-masuk.detail-pemeriksaan', $bm->id_masuk) }}" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="Detail Pemeriksaan">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <!-- Tombol untuk mengisi kondisi awal sekaligus konfirmasi penerimaan (centang hijau) - hanya jika status menunggu -->
+
+                                <!-- Tombol Konfirmasi (centang hijau) hanya jika status menunggu -->
                                 @if($bm->status == 'menunggu')
-                                    <a href="{{ route('barang-masuk.kondisi-awal', $bm->id_masuk) }}" class="btn btn-sm btn-outline-success rounded-pill me-1" title="Isi Kondisi Awal & Konfirmasi">
-                                        <i class="fas fa-check-circle"></i>
-                                    </a>
+                                <a href="{{ route('barang-masuk.kondisi-awal', $bm->id_masuk) }}" class="btn btn-sm btn-outline-success rounded-pill me-1" title="Isi Kondisi Awal & Konfirmasi">
+                                    <i class="fas fa-check-circle"></i>
+                                </a>
                                 @endif
+
+                                <!-- Tombol Edit & Hapus hanya jika status menunggu -->
+                                @if($bm->status == 'menunggu')
                                 <a href="{{ route('barang-masuk.edit', $bm->id_masuk) }}" class="btn btn-sm btn-outline-secondary rounded-pill me-1" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -159,8 +165,9 @@
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
+                                @endif
                             </td>
-                        <tr>
+                        </tr>
                         @empty
                         <tr>
                             <td colspan="8" class="text-center py-4 text-muted">Belum ada data penerimaan barang</td>
