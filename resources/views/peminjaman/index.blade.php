@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <!-- Filter -->
+    <!-- Filter (tanpa semester) -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3">

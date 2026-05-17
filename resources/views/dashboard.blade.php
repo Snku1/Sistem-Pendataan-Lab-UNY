@@ -77,21 +77,25 @@
         </div>
     </div>
 
-    <!-- Grafik Baris 1 (dengan pengaturan ukuran & badge legend) -->
+    <!-- Grafik Baris 1 -->
     <div class="row g-3 mb-4">
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-transparent border-0 pt-3 pb-0">
                     <h5 class="fw-semibold mb-0"><i class="fas fa-chart-bar text-primary me-2"></i>Grafik Inventaris per Semester</h5>
-                    <p class="text-muted small mb-0">Perbandingan kondisi barang per periode akademik</p>
+                    <p class="text-muted small mb-0">Perbandingan kondisi barang per periode akademik (Baik / Rusak / Hilang)</p>
                 </div>
                 <div class="card-body d-flex flex-column">
                     <canvas id="semesterChart" style="min-height: 250px; max-height: 250px;"></canvas>
-                    <div class="d-flex justify-content-center gap-4 mt-3">
-                        <span class="badge bg-primary">Semester 1</span>
-                        <span class="badge bg-success">Semester 2</span>
-                        <span class="badge bg-warning">Semester 3</span>
-                        <span class="badge bg-info">Semester 4</span>
+                    <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+                        @foreach($semesterLabels as $index => $label)
+                            <span class="badge" style="background-color: {{ ['#0d6efd', '#198754', '#ffc107', '#0dcaf0'][$index % 4] }};">{{ $label }}</span>
+                        @endforeach
+                    </div>
+                    <div class="d-flex justify-content-center gap-4 mt-2">
+                        <span class="badge bg-success">Baik</span>
+                        <span class="badge bg-warning">Rusak</span>
+                        <span class="badge bg-danger">Hilang</span>
                     </div>
                 </div>
             </div>
@@ -114,7 +118,7 @@
         </div>
     </div>
 
-    <!-- Grafik Baris 2 (ukuran konsisten, legend tetap bawaan Chart.js) -->
+    <!-- Grafik Baris 2 -->
     <div class="row g-3 mb-4">
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4">
@@ -140,7 +144,7 @@
         </div>
     </div>
 
-    <!-- Pemberitahuan Sistem & Recent Activity (tidak diubah) -->
+    <!-- Pemberitahuan Sistem & Recent Activity -->
     <div class="row g-3">
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4">
@@ -263,28 +267,51 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Grafik Inventaris per Semester (legend disembunyikan, karena pakai badge)
+    // Grafik Inventaris per Semester (stacked bar chart untuk Baik, Rusak, Hilang)
     const semesterCtx = document.getElementById('semesterChart').getContext('2d');
     new Chart(semesterCtx, {
         type: 'bar',
         data: {
             labels: {!! json_encode($semesterLabels) !!},
-            datasets: [{
-                label: 'Jumlah Barang',
-                data: {!! json_encode($semesterData) !!},
-                backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#0dcaf0'],
-                borderRadius: 8,
-                barPercentage: 0.65
-            }]
+            datasets: [
+                {
+                    label: 'Baik',
+                    data: {!! json_encode($semesterBaik) !!},
+                    backgroundColor: '#198754',
+                    borderRadius: 4,
+                    stack: 'stack0'
+                },
+                {
+                    label: 'Rusak',
+                    data: {!! json_encode($semesterRusak) !!},
+                    backgroundColor: '#ffc107',
+                    borderRadius: 4,
+                    stack: 'stack0'
+                },
+                {
+                    label: 'Hilang',
+                    data: {!! json_encode($semesterHilang) !!},
+                    backgroundColor: '#dc3545',
+                    borderRadius: 4,
+                    stack: 'stack0'
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            plugins: { legend: { display: false } }
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Jumlah Unit' } }
+            }
         }
     });
 
-    // Grafik Distribusi Kondisi Barang (legend disembunyikan)
+    // Grafik Distribusi Kondisi Barang
     const kondisiCtx = document.getElementById('kondisiChart').getContext('2d');
     new Chart(kondisiCtx, {
         type: 'pie',
@@ -303,7 +330,7 @@
         }
     });
 
-    // Grafik Barang Masuk (legend tetap muncul)
+    // Grafik Barang Masuk
     const barangMasukCtx = document.getElementById('barangMasukChart').getContext('2d');
     new Chart(barangMasukCtx, {
         type: 'line',
@@ -329,7 +356,7 @@
         }
     });
 
-    // Grafik Aktivitas Peminjaman (legend tetap muncul)
+    // Grafik Aktivitas Peminjaman
     const peminjamanCtx = document.getElementById('peminjamanChart').getContext('2d');
     new Chart(peminjamanCtx, {
         type: 'line',

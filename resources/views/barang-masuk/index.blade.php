@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="container-fluid px-0">
-    <!-- Header & Breadcrumb dengan tombol -->
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-1">Manajemen Penerimaan Barang</h2>
@@ -17,7 +17,7 @@
         </div>
     </div>
 
-    <!-- Card Statistik -->
+    <!-- Statistik Cards -->
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -60,22 +60,29 @@
         </div>
     </div>
 
-    <!-- Filter -->
+    <!-- Filter (semua dalam satu baris) -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
-            <form method="GET" class="row g-3">
+            <form method="GET" class="row g-3 align-items-end">
+                <!-- Cari Barang -->
                 <div class="col-md-3">
                     <label class="form-label small fw-semibold">Cari Barang</label>
-                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Nama barang...">
+                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" 
+                           value="{{ request('search') }}" placeholder="Nama barang...">
                 </div>
+                <!-- Tanggal Awal -->
                 <div class="col-md-2">
                     <label class="form-label small fw-semibold">Tanggal Awal</label>
-                    <input type="date" name="tanggal_awal" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_awal') }}">
+                    <input type="date" name="tanggal_awal" class="form-control form-control-sm rounded-pill" 
+                           value="{{ request('tanggal_awal') }}">
                 </div>
+                <!-- Tanggal Akhir -->
                 <div class="col-md-2">
                     <label class="form-label small fw-semibold">Tanggal Akhir</label>
-                    <input type="date" name="tanggal_akhir" class="form-control form-control-sm rounded-pill" value="{{ request('tanggal_akhir') }}">
+                    <input type="date" name="tanggal_akhir" class="form-control form-control-sm rounded-pill" 
+                           value="{{ request('tanggal_akhir') }}">
                 </div>
+                <!-- Status -->
                 <div class="col-md-2">
                     <label class="form-label small fw-semibold">Status</label>
                     <select name="status" class="form-select form-select-sm rounded-pill">
@@ -84,7 +91,8 @@
                         <option value="diterima" {{ request('status') == 'diterima' ? 'selected' : '' }}>Diterima</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
+                <!-- Tombol Filter & Reset (dalam satu grup) -->
+                <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
@@ -119,10 +127,11 @@
                     <tbody>
                         @forelse($barangMasuk as $bm)
                         <tr>
-                            <td class="ps-2">{{ \Carbon\Carbon::parse($bm->tanggal_masuk)->translatedFormat('d M Y') }}</td>
+                            <!-- TANGGAL dalam format Indonesia: 17 Mei 2026 -->
+                            <td class="ps-2">{{ \Carbon\Carbon::parse($bm->tanggal_masuk)->translatedFormat('d F Y') }}</td>
                             <td class="fw-semibold">{{ $bm->barang->nama_barang ?? '-' }}</td>
                             <td>{{ $bm->sumber ?? '-' }}</td>
-                            <td>{{ $bm->jumlah_masuk }} {{ $bm->barang->satuan ?? 'unit' }}</td>
+                            <td>{{ $bm->jumlah_masuk }} unit</td>
                             <td>{{ $bm->penanggungJawab->nama_pj ?? '-' }}</td>
                             <td>
                                 @if($bm->bukti_foto)
@@ -141,12 +150,12 @@
                                 @endif
                             </td>
                             <td class="pe-2">
-                                <!-- Tombol Detail Pemeriksaan (selalu ada) -->
+                                <!-- Tombol Detail Pemeriksaan -->
                                 <a href="{{ route('barang-masuk.detail-pemeriksaan', $bm->id_masuk) }}" class="btn btn-sm btn-outline-primary rounded-pill me-1" title="Detail Pemeriksaan">
                                     <i class="fas fa-eye"></i>
                                 </a>
 
-                                <!-- Tombol Konfirmasi (centang hijau) hanya jika status menunggu -->
+                                <!-- Tombol Kondisi Awal (centang hijau) hanya jika status menunggu -->
                                 @if($bm->status == 'menunggu')
                                 <a href="{{ route('barang-masuk.kondisi-awal', $bm->id_masuk) }}" class="btn btn-sm btn-outline-success rounded-pill me-1" title="Isi Kondisi Awal & Konfirmasi">
                                     <i class="fas fa-check-circle"></i>

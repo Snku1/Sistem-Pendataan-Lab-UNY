@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\CheckSemester; // tambahkan import CheckSemester
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,9 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Daftarkan middleware dengan alias 'role'
+        // Daftarkan middleware dengan alias
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'check.semester' => CheckSemester::class, // tambahkan alias untuk check semester
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

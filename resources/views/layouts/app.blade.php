@@ -20,40 +20,19 @@
         * {
             font-family: 'Inter', sans-serif;
         }
-
         body {
             background-color: #f5f7fb;
             overflow-x: hidden;
         }
-
-        /* Navbar Styling */
         .navbar-brand {
             font-weight: 700;
             font-size: 1.25rem;
             white-space: nowrap;
         }
-
-        /* Search Bar Styling */
-        .search-bar {
-            border-radius: 50px;
-            border: none;
-            background-color: rgba(255, 255, 255, 0.15);
-            color: white;
-            padding: 0.5rem 1rem;
-            transition: all 0.3s ease;
+        .navbar-brand img {
+            max-height: 35px;
+            margin-right: 8px;
         }
-
-        .search-bar::placeholder {
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .search-bar:focus {
-            background-color: rgba(255, 255, 255, 0.25);
-            outline: none;
-            box-shadow: none;
-        }
-
-        /* Sidebar Styling - dengan transisi untuk collapse */
         .sidebar {
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
             box-shadow: 1px 0 0 rgba(0, 0, 0, 0.05);
@@ -65,43 +44,33 @@
             position: sticky;
             top: 60px;
         }
-
-        /* Mode expanded (default) */
         .sidebar-expanded {
             width: 260px;
         }
-
-        /* Mode collapsed (mini) */
         .sidebar-collapsed {
             width: 70px;
         }
-
         .sidebar-collapsed .nav-link span,
         .sidebar-collapsed .nav-section-title span,
         .sidebar-collapsed .nav-section-title i:not(.fa-chevron-right) {
             display: none;
         }
-
         .sidebar-collapsed .nav-link {
             text-align: center;
             padding: 0.625rem 0;
         }
-
         .sidebar-collapsed .nav-link i {
             margin-right: 0 !important;
             width: auto;
             font-size: 1.25rem;
         }
-
         .sidebar-collapsed .nav-section-title {
             text-align: center;
             padding: 0.75rem 0;
         }
-
         .sidebar-collapsed .nav-section-title i {
             margin-right: 0;
         }
-
         .sidebar .nav-section-title {
             font-size: 0.7rem;
             font-weight: 600;
@@ -112,7 +81,6 @@
             margin-top: 0.5rem;
             transition: all 0.3s;
         }
-
         .sidebar .nav-link {
             color: #4a5568;
             padding: 0.625rem 1rem;
@@ -122,49 +90,37 @@
             font-weight: 500;
             transition: all 0.2s ease;
         }
-
         .sidebar .nav-link:hover {
             background-color: #eef2ff;
             color: #1e40af;
         }
-
         .sidebar .nav-link.active {
             background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
             color: white !important;
             box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
         }
-
         .sidebar .nav-link i {
             width: 1.75rem;
             font-size: 1rem;
             margin-right: 0.5rem;
         }
-
-        /* Main Content */
         .main-content {
             background-color: #f5f7fb;
             min-height: calc(100vh - 60px);
             flex-grow: 1;
             overflow-x: auto;
         }
-
-        /* Layout container */
         .app-container {
             display: flex;
             width: 100%;
         }
-
-        /* Card Hover Effect */
         .card-hover {
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
         .card-hover:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
         }
-
-        /* User Avatar */
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -177,42 +133,31 @@
             font-weight: 600;
             font-size: 0.875rem;
         }
-
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
         }
-
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
         }
-
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
-
         ::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
-
-        /* Notification Styling */
         .notification-stok-menipis {
             background-color: #fee2e2;
             border-left: 4px solid #dc3545;
         }
-
         .notification-stok-menipis:hover {
             background-color: #fecaca;
         }
-
         .datetime-badge {
             background: linear-gradient(135deg, #0d6efd, #0b5ed7);
             padding: 0.5rem 1rem;
             border-radius: 50px;
         }
-
-        /* Tombol toggle sidebar */
         .toggle-sidebar-btn {
             background: transparent;
             border: none;
@@ -221,9 +166,33 @@
             margin-right: 0.5rem;
             cursor: pointer;
         }
-
         .toggle-sidebar-btn:hover {
             color: rgba(255, 255, 255, 0.8);
+        }
+        .semester-dropdown-toggle {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            padding: 0.25rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .semester-dropdown-toggle:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .semester-dropdown-toggle::after {
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .semester-dropdown-menu {
+            min-width: 220px;
+        }
+        .dropdown-item.active-semester {
+            background-color: #0d6efd;
+            color: white;
         }
     </style>
 </head>
@@ -232,44 +201,34 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
         <div class="container-fluid px-4">
-            <!-- Tombol Toggle Sidebar dan Logo -->
             <div class="d-flex align-items-center">
                 <button class="toggle-sidebar-btn d-none d-md-block" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
                 <a class="navbar-brand ms-2" href="{{ route('dashboard') }}">
-                    <i class="fas fa-microscope me-2"></i>
-                    <span class="fw-bold">Sistem Lab AV & TV</span>
+                    <!-- Logo gambar UNY (ganti path sesuai lokasi file logo Anda) -->
+                    <img src="{{ asset('images/logo-uny.png') }}" style="max-height: 35px;">
+                    <span class="fw-bold">Laboratorium AV & TV</span>
                 </a>
             </div>
 
-            <!-- Search Bar - Posisi Tengah -->
-            <div class="flex-grow-1 d-flex justify-content-center mx-3">
-                <form action="{{ route('barang.index') }}" method="GET" class="d-flex w-100" style="max-width: 400px;">
-                    <div class="position-relative w-100">
-                        <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-white-50"></i>
-                        <input type="text" name="search" class="search-bar ps-5 w-100" placeholder="Cari barang, merk, atau kode..."
-                            value="{{ request('search') }}">
-                    </div>
-                </form>
-            </div>
-
-            <!-- Menu Kanan -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item me-2 d-lg-none">
-                        <a class="nav-link text-white-50" href="#" data-bs-toggle="modal" data-bs-target="#searchModal">
-                            <i class="fas fa-search"></i>
+                    <!-- Dropdown Ganti Semester -->
+                    <li class="nav-item dropdown me-2" id="semesterDropdownContainer" style="display: none;">
+                        <a class="nav-link semester-dropdown-toggle dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="semesterDropdownToggle">
+                            <i class="fas fa-calendar-alt me-1"></i> <span id="currentSemesterLabel">Memuat...</span>
                         </a>
+                        <ul class="dropdown-menu semester-dropdown-menu dropdown-menu-end" id="semesterDropdownMenu">
+                            <!-- Akan diisi oleh JavaScript -->
+                        </ul>
                     </li>
-                    <li class="nav-item me-2">
-                        <a class="nav-link text-white-50" href="#">
-                            <i class="fas fa-bell"></i>
-                        </a>
-                    </li>
+
+                    <!-- Tombol lonceng (bell) dihapus -->
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
                             <div class="user-avatar">
@@ -278,11 +237,9 @@
                             <span class="d-none d-lg-inline">{{ Auth::user()->nama ?? 'Admin Lab' }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-circle me-2"></i>Profil Saya</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Pengaturan</a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
+                            <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="fas fa-user-circle me-2"></i>Profil Saya</a></li>
+                            <li><a class="dropdown-item" href="{{ route('settings.index') }}"><i class="fas fa-cog me-2"></i>Pengaturan</a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -298,30 +255,11 @@
         </div>
     </nav>
 
-    <!-- Search Modal untuk mobile -->
-    <div class="modal fade" id="searchModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Cari Barang</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ route('barang.index') }}" method="GET">
-                        <input type="text" name="search" class="form-control" placeholder="Cari barang, merk, atau kode...">
-                        <button type="submit" class="btn btn-primary mt-3 w-100">Cari</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="app-container">
         <!-- Sidebar -->
         <nav class="sidebar sidebar-expanded" id="sidebar">
             <div class="position-sticky pt-3" style="top: 0;">
                 <ul class="nav flex-column">
-                    <!-- Main Navigation -->
                     <li class="nav-section-title">
                         <i class="fas fa-compass me-1"></i> <span>Main Navigation</span>
                     </li>
@@ -350,8 +288,6 @@
                             <i class="fas fa-history me-2"></i><span>Riwayat Peminjaman</span>
                         </a>
                     </li>
-
-                    <!-- Management & Reporting -->
                     <li class="nav-section-title mt-3">
                         <i class="fas fa-chart-simple me-1"></i> <span>Management & Reporting</span>
                     </li>
@@ -376,12 +312,17 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link {{ request()->routeIs('semester.*') ? 'active' : '' }}" href="{{ route('semester.daftar') }}">
+                            <i class="fas fa-calendar-alt me-2"></i> <span>Manajemen Semester</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('user.*') ? 'active' : '' }}" href="{{ route('user.index') }}">
                             <i class="fas fa-users me-2"></i> <span>Manajemen User</span>
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">
+                        <a class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}" href="{{ route('settings.index') }}">
                             <i class="fas fa-sliders-h me-2"></i> <span>Pengaturan</span>
                         </a>
                     </li>
@@ -389,7 +330,6 @@
             </div>
         </nav>
 
-        <!-- Main Content -->
         <main class="main-content">
             <div class="px-4 py-4">
                 @yield('content')
@@ -397,74 +337,134 @@
         </main>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- jQuery (opsional untuk beberapa fitur) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
     <script>
         // Toggle sidebar
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('sidebar');
             const toggleBtn = document.getElementById('sidebarToggle');
-            if (!sidebar || !toggleBtn) return;
-
-            // Cek localStorage untuk menyimpan status sidebar
-            const sidebarState = localStorage.getItem('sidebarCollapsed');
-            if (sidebarState === 'true') {
-                sidebar.classList.remove('sidebar-expanded');
-                sidebar.classList.add('sidebar-collapsed');
-            } else {
-                sidebar.classList.remove('sidebar-collapsed');
-                sidebar.classList.add('sidebar-expanded');
-            }
-
-            toggleBtn.addEventListener('click', function() {
-                if (sidebar.classList.contains('sidebar-expanded')) {
+            if (sidebar && toggleBtn) {
+                const sidebarState = localStorage.getItem('sidebarCollapsed');
+                if (sidebarState === 'true') {
                     sidebar.classList.remove('sidebar-expanded');
                     sidebar.classList.add('sidebar-collapsed');
-                    localStorage.setItem('sidebarCollapsed', 'true');
                 } else {
                     sidebar.classList.remove('sidebar-collapsed');
                     sidebar.classList.add('sidebar-expanded');
-                    localStorage.setItem('sidebarCollapsed', 'false');
                 }
-                // Trigger resize event untuk memastikan chart dan elemen lain menyesuaikan
-                window.dispatchEvent(new Event('resize'));
-            });
+                toggleBtn.addEventListener('click', function() {
+                    if (sidebar.classList.contains('sidebar-expanded')) {
+                        sidebar.classList.remove('sidebar-expanded');
+                        sidebar.classList.add('sidebar-collapsed');
+                        localStorage.setItem('sidebarCollapsed', 'true');
+                    } else {
+                        sidebar.classList.remove('sidebar-collapsed');
+                        sidebar.classList.add('sidebar-expanded');
+                        localStorage.setItem('sidebarCollapsed', 'false');
+                    }
+                    window.dispatchEvent(new Event('resize'));
+                });
+            }
         });
 
-        // Aktifkan tooltip
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
+        async function loadSemesterDropdown() {
+            try {
+                const response = await fetch('{{ route("semester.list") }}');
+                if (!response.ok) throw new Error('Gagal mengambil data semester');
+                const semesters = await response.json();
+                const currentId = {{ session('active_semester_id', 'null') }};
+                const container = document.getElementById('semesterDropdownContainer');
+                const toggleLabel = document.getElementById('currentSemesterLabel');
+                const menu = document.getElementById('semesterDropdownMenu');
 
-        // Update waktu real-time
+                if (!semesters.length) {
+                    container.style.display = 'none';
+                    return;
+                }
+
+                let activeLabel = '';
+                if (currentId === 0) {
+                    activeLabel = 'Semua Semester';
+                } else {
+                    const activeSemester = semesters.find(s => s.id_semester === currentId);
+                    if (activeSemester) {
+                        activeLabel = `${activeSemester.nama_semester} - ${activeSemester.tahun_ajaran}`;
+                    } else {
+                        container.style.display = 'none';
+                        return;
+                    }
+                }
+
+                toggleLabel.innerText = activeLabel;
+                container.style.display = 'block';
+
+                let html = `
+                    <li>
+                        <a class="dropdown-item ${currentId === 0 ? 'active active-semester' : ''}" href="#" data-id="0">
+                            <i class="fas fa-globe me-2"></i> Semua Semester
+                            ${currentId === 0 ? ' <i class="fas fa-check-circle float-end mt-1"></i>' : ''}
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                `;
+                semesters.forEach(sem => {
+                    const isActive = (currentId === sem.id_semester);
+                    html += `
+                        <li>
+                            <a class="dropdown-item ${isActive ? 'active active-semester' : ''}" href="#" data-id="${sem.id_semester}">
+                                ${sem.nama_semester} - ${sem.tahun_ajaran}
+                                ${isActive ? ' <i class="fas fa-check-circle float-end mt-1"></i>' : ''}
+                            </a>
+                        </li>
+                    `;
+                });
+                menu.innerHTML = html;
+
+                document.querySelectorAll('#semesterDropdownMenu .dropdown-item').forEach(item => {
+                    item.addEventListener('click', async function(e) {
+                        e.preventDefault();
+                        const id = this.getAttribute('data-id');
+                        if (!id) return;
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const formData = new FormData();
+                        formData.append('id_semester', id);
+                        const resp = await fetch('{{ route("set-semester") }}', {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+                            body: formData
+                        });
+                        if (resp.ok) {
+                            window.location.reload();
+                        } else {
+                            alert('Gagal mengubah semester');
+                        }
+                    });
+                });
+            } catch (err) {
+                console.error(err);
+                const container = document.getElementById('semesterDropdownContainer');
+                if (container) container.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSemesterDropdown);
+
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
         function updateDateTime() {
             const now = new Date();
-            const options = {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false,
-                timeZone: 'Asia/Jakarta'
-            };
+            const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' };
             const timeString = now.toLocaleTimeString('id-ID', options);
-            const dateString = now.toLocaleDateString('id-ID', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-
+            const dateString = now.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
             const dateTimeElement = document.getElementById('realTimeDateTime');
             if (dateTimeElement) {
                 dateTimeElement.innerHTML = `<i class="fas fa-calendar-alt me-1"></i> ${dateString} | <i class="fas fa-clock me-1"></i> ${timeString} WIB`;
             }
         }
-
-        // Update setiap detik
         setInterval(updateDateTime, 1000);
         updateDateTime();
     </script>

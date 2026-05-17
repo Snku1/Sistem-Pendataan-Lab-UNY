@@ -11,7 +11,13 @@ class RiwayatStok extends Model
 
     protected $table = 'riwayat_stok';
     protected $fillable = [
-        'id_barang', 'stok_lama', 'stok_baru', 'jenis_perubahan', 'alasan', 'id_user'
+        'id_barang', 
+        'stok_lama', 
+        'stok_baru', 
+        'jenis_perubahan', 
+        'alasan', 
+        'id_user',
+        'id_semester'   // tambah
     ];
 
     public function barang()
@@ -22,5 +28,10 @@ class RiwayatStok extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
     }
 }

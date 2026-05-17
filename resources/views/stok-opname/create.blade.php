@@ -16,6 +16,30 @@
         </div>
     </div>
 
+    <!-- Informasi Semester Aktif -->
+    <div class="alert alert-info bg-opacity-10 border-0 rounded-4 mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle me-2"></i>
+            <div>
+                Stok opname ini akan dicatat untuk semester:
+                <strong>
+                    @php
+                        $activeSemesterId = session('active_semester_id');
+                        $semesterLabel = 'Semua Semester';
+                        if ($activeSemesterId && $activeSemesterId != 0) {
+                            $semester = App\Models\Semester::find($activeSemesterId);
+                            if ($semester) {
+                                $semesterLabel = $semester->nama_semester . ' - ' . $semester->tahun_ajaran;
+                            }
+                        }
+                    @endphp
+                    {{ $semesterLabel }}
+                </strong>
+                <br><small class="text-muted">Barang yang ditampilkan hanya dari semester tersebut.</small>
+            </div>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body p-4">
             <form action="{{ route('stok-opname.store') }}" method="POST">
@@ -32,7 +56,7 @@
                 </div>
 
                 <hr class="my-4">
-                <h5 class="fw-semibold mb-3">Daftar Barang</h5>
+                <h5 class="fw-semibold mb-3">Daftar Barang (Semester Aktif)</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle">
                         <thead class="table-light">
@@ -45,7 +69,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($barang as $index => $b)
+                            @forelse($barang as $index => $b)
                             <tr>
                                 <td>{{ $b->kode_barang }}</td>
                                 <td>{{ $b->nama_barang }} @if($b->merk) ({{ $b->merk }}) @endif</td>
@@ -60,13 +84,17 @@
                                            placeholder="Selisih, kondisi, dll">
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Tidak ada barang pada semester aktif ini</td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
 
                 <div class="mt-4">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4" {{ count($barang) == 0 ? 'disabled' : '' }}>
                         <i class="fas fa-save me-2"></i>Simpan Opname
                     </button>
                     <a href="{{ route('stok-opname.index') }}" class="btn btn-outline-secondary rounded-pill px-4 ms-2">

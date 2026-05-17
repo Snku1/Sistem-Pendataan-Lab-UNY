@@ -7,6 +7,7 @@ use App\Models\BarangMasuk;
 use App\Models\Lokasi;
 use App\Models\PenanggungJawab;
 use App\Models\LogAktivitas;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +15,6 @@ use Illuminate\Support\Facades\Log;
 
 class BarangController extends Controller
 {
-    // Helper untuk generate kode barang otomatis
     private function generateKodeBarang()
     {
         $lastBarang = Barang::orderBy('id_barang', 'desc')->first();
@@ -27,21 +27,32 @@ class BarangController extends Controller
         return 'AV' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
+    private function getActiveSemesterId()
+    {
+        return session('active_semester_id');
+    }
+
     public function index(Request $request)
     {
-        $query = Barang::with(['lokasi', 'penanggungJawab']);
+        $activeSemesterId = $this->getActiveSemesterId();
+        // Jika belum ada pilihan semester, arahkan ke halaman pilih semester
+        if ($activeSemesterId === null) {
+            return redirect()->route('semester.daftar')->with('warning', 'Silakan pilih semester terlebih dahulu.');
+        }
 
+        $query = Barang::with(['lokasi', 'penanggungJawab', 'semester']);
+
+        // Filter berdasarkan semester jika bukan "Semua Semester"
+        if ($activeSemesterId != 0) {
+            $query->where('id_semester', $activeSemesterId);
+        }
+
+        // Filter tambahan
         if ($request->filled('merk')) {
             $query->where('merk', $request->merk);
         }
         if ($request->filled('kategori')) {
             $query->whereHas('lokasi', fn($q) => $q->where('nama_lokasi', 'like', '%' . $request->kategori . '%'));
-        }
-        if ($request->filled('semester')) {
-            $query->where('semester', $request->semester);
-        }
-        if ($request->filled('tahun_ajaran')) {
-            $query->where('tahun_ajaran', $request->tahun_ajaran);
         }
         if ($request->filled('kondisi')) {
             $kondisi = $request->kondisi;
@@ -65,14 +76,21 @@ class BarangController extends Controller
 
         $barang = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        $totalBarang = Barang::sum('stok');
-        $barangBaik = Barang::sum('jumlah_baik');
-        $barangRusak = Barang::sum('jumlah_rusak');
-        $barangHilang = Barang::sum('jumlah_hilang');
+        // Statistik berdasarkan filter yang sama (gunakan clone query)
+        $totalBarang = (clone $query)->sum('stok');
+        $barangBaik = (clone $query)->sum('jumlah_baik');
+        $barangRusak = (clone $query)->sum('jumlah_rusak');
+        $barangHilang = (clone $query)->sum('jumlah_hilang');
 
-        $merkList = Barang::select('merk')->distinct()->whereNotNull('merk')->pluck('merk');
+        // Daftar merk yang tersedia (sesuai filter semester)
+        $merkQuery = Barang::query();
+        if ($activeSemesterId != 0) {
+            $merkQuery->where('id_semester', $activeSemesterId);
+        }
+        $merkList = $merkQuery->select('merk')->distinct()->whereNotNull('merk')->pluck('merk');
+
         $kategoriList = Lokasi::select('nama_lokasi')->distinct()->pluck('nama_lokasi');
-        $tahunAjaranList = Barang::select('tahun_ajaran')->distinct()->whereNotNull('tahun_ajaran')->pluck('tahun_ajaran');
+        $semesterList = Semester::orderBy('tahun_ajaran', 'desc')->orderBy('nama_semester', 'desc')->get();
 
         return view('barang.index', compact(
             'barang',
@@ -82,12 +100,18 @@ class BarangController extends Controller
             'barangHilang',
             'merkList',
             'kategoriList',
-            'tahunAjaranList'
+            'semesterList'
         ));
     }
 
     public function create()
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        // Untuk menambah barang, harus memilih semester tertentu (bukan "Semua Semester")
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu (bukan "Semua Semester") untuk menambah barang.');
+        }
+
         $lokasi = Lokasi::all();
         $penanggungJawab = PenanggungJawab::all();
         $kodeBarangOtomatis = $this->generateKodeBarang();
@@ -96,6 +120,11 @@ class BarangController extends Controller
 
     public function store(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu untuk menyimpan barang.');
+        }
+
         $request->validate([
             'kode_barang' => 'nullable|string|max:255|unique:barang,kode_barang',
             'nama_barang' => 'required|string|max:255',
@@ -108,22 +137,18 @@ class BarangController extends Controller
             'jumlah_hilang' => 'nullable|integer|min:0',
             'keterangan' => 'nullable|string',
             'penanggung_jawab' => 'array|exists:penanggung_jawab,id_pj',
-            'semester' => 'nullable|in:Ganjil,Genap',
-            'tahun_ajaran' => 'nullable|string|max:20'
         ]);
 
         DB::beginTransaction();
         try {
             $data = $request->except('penanggung_jawab');
-
-            // Generate kode barang jika kosong
             if (empty($data['kode_barang'])) {
                 $data['kode_barang'] = $this->generateKodeBarang();
             }
-
             $data['jumlah_rusak'] = $data['jumlah_rusak'] ?? 0;
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
-            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'];
+            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
+            $data['id_semester'] = $activeSemesterId;
 
             $barang = Barang::create($data);
             if ($request->has('penanggung_jawab')) {
@@ -147,13 +172,22 @@ class BarangController extends Controller
 
     public function show($id)
     {
-        $barang = Barang::with(['lokasi', 'penanggungJawab', 'riwayatStok', 'riwayatKondisi'])->findOrFail($id);
+        $barang = Barang::with(['lokasi', 'penanggungJawab', 'riwayatStok', 'riwayatKondisi', 'semester'])->findOrFail($id);
         return view('barang.show', compact('barang'));
     }
 
     public function edit($id)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu untuk mengedit barang.');
+        }
+
         $barang = Barang::with('penanggungJawab')->findOrFail($id);
+        if ($barang->id_semester != $activeSemesterId) {
+            return redirect()->route('barang.index')->with('error', 'Anda tidak dapat mengedit barang dari semester lain.');
+        }
+
         $lokasi = Lokasi::all();
         $penanggungJawab = PenanggungJawab::all();
         return view('barang.edit', compact('barang', 'lokasi', 'penanggungJawab'));
@@ -161,7 +195,15 @@ class BarangController extends Controller
 
     public function update(Request $request, $id)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu untuk mengupdate barang.');
+        }
+
         $barang = Barang::findOrFail($id);
+        if ($barang->id_semester != $activeSemesterId) {
+            return redirect()->route('barang.index')->with('error', 'Anda tidak dapat mengedit barang dari semester lain.');
+        }
 
         $validator = validator($request->all(), [
             'kode_barang' => 'required|string|max:255|unique:barang,kode_barang,' . $id . ',id_barang',
@@ -175,8 +217,6 @@ class BarangController extends Controller
             'jumlah_hilang' => 'nullable|integer|min:0',
             'keterangan' => 'nullable|string',
             'penanggung_jawab' => 'array|exists:penanggung_jawab,id_pj',
-            'semester' => 'nullable|in:Ganjil,Genap',
-            'tahun_ajaran' => 'nullable|string|max:20'
         ]);
 
         if ($validator->fails()) {
@@ -188,7 +228,7 @@ class BarangController extends Controller
             $data = $request->except('penanggung_jawab');
             $data['jumlah_rusak'] = $data['jumlah_rusak'] ?? 0;
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
-            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'];
+            $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
 
             $barang->update($data);
             $barang->penanggungJawab()->sync($request->penanggung_jawab ?? []);
@@ -210,7 +250,16 @@ class BarangController extends Controller
 
     public function destroy($id)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu untuk menghapus barang.');
+        }
+
         $barang = Barang::findOrFail($id);
+        if ($barang->id_semester != $activeSemesterId) {
+            return redirect()->route('barang.index')->with('error', 'Anda tidak dapat menghapus barang dari semester lain.');
+        }
+
         $namaBarang = $barang->nama_barang;
 
         DB::beginTransaction();
@@ -233,6 +282,7 @@ class BarangController extends Controller
         }
     }
 
+    // Metode untuk kondisi awal barang masuk (jika diperlukan)
     public function editKondisiAwal($id)
     {
         $barangMasuk = BarangMasuk::findOrFail($id);

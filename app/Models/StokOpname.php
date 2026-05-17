@@ -14,7 +14,12 @@ class StokOpname extends Model
     protected $primaryKey = 'id_opname';
 
     protected $fillable = [
-        'kode_opname', 'tanggal_opname', 'keterangan', 'status', 'id_user'
+        'kode_opname', 
+        'tanggal_opname', 
+        'keterangan', 
+        'status', 
+        'id_user',
+        'id_semester'   // tambah
     ];
 
     public function user()
@@ -25,6 +30,11 @@ class StokOpname extends Model
     public function details()
     {
         return $this->hasMany(StokOpnameDetail::class, 'id_opname');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
     }
 
     public static function generateKodeOpname()

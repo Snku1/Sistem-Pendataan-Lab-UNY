@@ -16,6 +16,26 @@
         </div>
     </div>
 
+    <!-- Badge Semester Aktif -->
+    <div class="mb-3">
+        @php
+            $activeSemesterId = session('active_semester_id');
+            $semesterLabel = 'Semua Semester';
+            if ($activeSemesterId && $activeSemesterId != 0) {
+                $semester = App\Models\Semester::find($activeSemesterId);
+                if ($semester) {
+                    $semesterLabel = $semester->nama_semester . ' - ' . $semester->tahun_ajaran;
+                }
+            } elseif ($activeSemesterId == 0) {
+                $semesterLabel = 'Semua Semester';
+            }
+        @endphp
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+            <i class="fas fa-calendar-alt me-1"></i> {{ $semesterLabel }}
+        </span>
+        <small class="text-muted ms-2">Data opname yang ditampilkan sesuai semester aktif</small>
+    </div>
+
     <!-- Filter -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
@@ -44,7 +64,7 @@
         </div>
     </div>
 
-    <!-- Tabel (tetap) -->
+    <!-- Tabel -->
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-transparent border-0 pt-3">
             <h5 class="fw-semibold mb-0"><i class="fas fa-clipboard-list me-2 text-primary"></i>Daftar Stok Opname</h5>

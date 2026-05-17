@@ -12,20 +12,18 @@ class BarangMasuk extends Model
     protected $table = 'barang_masuk';
     protected $primaryKey = 'id_masuk';
 
-    // app/Models/BarangMasuk.php
-
     protected $fillable = [
         'id_barang',
         'jumlah_masuk',
         'tanggal_masuk',
-        'semester',
-        'sumber',
+        'sumber',           // kolom semester dihapus
         'id_user',
         'status',
         'bukti_foto',
         'id_penanggung_jawab',
         'kondisi_penerimaan',
-        'catatan_pemeriksaan'
+        'catatan_pemeriksaan',
+        'id_semester'       // tambah
     ];
 
     protected $casts = [
@@ -44,9 +42,14 @@ class BarangMasuk extends Model
         return $this->belongsTo(User::class, 'id_user');
     }
 
-    // Relasi ke penanggung jawab (pemeriksa)
     public function penanggungJawab()
     {
         return $this->belongsTo(PenanggungJawab::class, 'id_penanggung_jawab');
+    }
+
+    // Relasi ke semester
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
     }
 }

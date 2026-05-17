@@ -23,11 +23,10 @@ class Barang extends Model
         'jumlah_rusak',
         'jumlah_hilang',
         'keterangan',
-        'semester',
-        'tahun_ajaran'
+        'id_semester'  // tambah
     ];
 
-    // Relasi (tetap sama)
+    // Relasi
     public function lokasi()
     {
         return $this->belongsTo(Lokasi::class, 'id_lokasi');
@@ -51,5 +50,10 @@ class Barang extends Model
     public function riwayatKondisi()
     {
         return $this->hasMany(RiwayatKondisi::class, 'id_barang');
-    } 
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
+    }
 }

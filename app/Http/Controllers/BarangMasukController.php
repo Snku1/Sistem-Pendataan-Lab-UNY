@@ -7,18 +7,64 @@ use App\Models\BarangMasuk;
 use App\Models\PenanggungJawab;
 use App\Models\RiwayatStok;
 use App\Models\LogAktivitas;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Session;
 
 class BarangMasukController extends Controller
 {
+    /**
+     * Ambil ID semester aktif dari session.
+     * @return int|null (bisa 0, null, atau id semester)
+     */
+    private function getActiveSemesterId()
+    {
+        return session('active_semester_id');
+    }
+
+    /**
+     * Pastikan semester aktif spesifik (bukan 0) dan valid. Jika tidak, redirect ke pilih semester.
+     * @return int|null (id semester) jika valid, atau redirect response
+     */
+    private function requireSpecificSemester()
+    {
+        $activeId = $this->getActiveSemesterId();
+        if (!$activeId || $activeId == 0) {
+            return redirect()->route('semester.daftar')
+                ->with('warning', 'Silakan pilih semester tertentu (bukan "Semua Semester") untuk melakukan transaksi ini.');
+        }
+        // Cek apakah semester masih ada di database
+        if (!Semester::where('id_semester', $activeId)->exists()) {
+            Session::forget('active_semester_id');
+            return redirect()->route('pilih-semester')
+                ->with('error', 'Semester tidak valid. Silakan pilih semester lagi.');
+        }
+        return $activeId;
+    }
+
     public function index(Request $request)
     {
-        $query = BarangMasuk::with(['barang', 'user', 'penanggungJawab'])->orderBy('tanggal_masuk', 'desc');
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
 
-        // Filter pencarian nama barang
+        $query = BarangMasuk::with(['barang', 'user', 'penanggungJawab', 'semester'])
+            ->orderBy('tanggal_masuk', 'desc');
+
+        // Filter berdasarkan semester aktif (kecuali jika user memilih filter semester tertentu di request)
+        if ($request->filled('id_semester')) {
+            $query->where('id_semester', $request->id_semester);
+        } else {
+            // Jika tidak ada filter manual, gunakan semester aktif (0 = semua semester)
+            if ($activeSemesterId != 0) {
+                $query->where('id_semester', $activeSemesterId);
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('barang', function ($q) use ($search) {
@@ -26,12 +72,10 @@ class BarangMasukController extends Controller
             });
         }
 
-        // Filter status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filter tanggal awal & akhir
         if ($request->filled('tanggal_awal')) {
             $query->whereDate('tanggal_masuk', '>=', $request->tanggal_awal);
         }
@@ -41,25 +85,43 @@ class BarangMasukController extends Controller
 
         $barangMasuk = $query->paginate(10)->withQueryString();
 
-        $menungguCount = BarangMasuk::where('status', 'menunggu')->count();
-        $diterimaCount = BarangMasuk::where('status', 'diterima')->count();
-        $todayTotal = BarangMasuk::whereDate('tanggal_masuk', today())->sum('jumlah_masuk');
+        $menungguCount = BarangMasuk::when($activeSemesterId != 0, fn($q) => $q->where('id_semester', $activeSemesterId))
+            ->where('status', 'menunggu')->count();
+        $diterimaCount = BarangMasuk::when($activeSemesterId != 0, fn($q) => $q->where('id_semester', $activeSemesterId))
+            ->where('status', 'diterima')->count();
+        $todayTotal = BarangMasuk::when($activeSemesterId != 0, fn($q) => $q->where('id_semester', $activeSemesterId))
+            ->whereDate('tanggal_masuk', today())->sum('jumlah_masuk');
 
-        return view('barang-masuk.index', compact('barangMasuk', 'menungguCount', 'diterimaCount', 'todayTotal'));
+        $semesterList = Semester::orderBy('tahun_ajaran', 'desc')->orderBy('nama_semester', 'desc')->get();
+
+        return view('barang-masuk.index', compact('barangMasuk', 'menungguCount', 'diterimaCount', 'todayTotal', 'semesterList'));
     }
 
     public function create()
     {
+        // Pastikan semester spesifik (bukan 0) karena kita akan menyimpan data barang masuk
+        $required = $this->requireSpecificSemester();
+        if ($required instanceof \Illuminate\Http\RedirectResponse) {
+            return $required;
+        }
+
         $barang = Barang::orderBy('nama_barang')->get();
         $penanggungJawabList = PenanggungJawab::orderBy('nama_pj')->get();
+        // Tidak perlu mengirim semesterList ke view karena semester akan diambil dari session aktif
         return view('barang-masuk.create', compact('barang', 'penanggungJawabList'));
     }
 
     public function store(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        // Harus semester spesifik (bukan 0) untuk menyimpan
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')
+                ->with('warning', 'Pilih semester tertentu terlebih dahulu untuk mencatat barang masuk.');
+        }
+
         $request->validate([
             'tanggal_masuk' => 'required|date',
-            'semester' => 'nullable|string|max:255',
             'sumber' => 'nullable|string|max:255',
             'id_penanggung_jawab' => 'nullable|exists:penanggung_jawab,id_pj',
             'status' => 'required|in:menunggu,diterima',
@@ -73,7 +135,6 @@ class BarangMasukController extends Controller
         try {
             $barangMasukRecords = [];
             foreach ($request->items as $item) {
-                // Upload foto per item jika ada
                 $fotoPath = null;
                 if (isset($item['foto']) && $item['foto'] instanceof \Illuminate\Http\UploadedFile) {
                     $fotoPath = $item['foto']->store('bukti_foto', 'public');
@@ -83,7 +144,7 @@ class BarangMasukController extends Controller
                     'id_barang' => $item['id_barang'],
                     'jumlah_masuk' => $item['jumlah'],
                     'tanggal_masuk' => $request->tanggal_masuk,
-                    'semester' => $request->semester,
+                    'id_semester' => $activeSemesterId, // gunakan semester aktif
                     'sumber' => $request->sumber,
                     'id_penanggung_jawab' => $request->id_penanggung_jawab,
                     'status' => $request->status,
@@ -92,7 +153,6 @@ class BarangMasukController extends Controller
                 ];
                 $barangMasuk = BarangMasuk::create($data);
 
-                // Jika status langsung diterima, update stok barang
                 if ($request->status == 'diterima') {
                     $barang = Barang::find($item['id_barang']);
                     $stokLama = $barang->stok;
@@ -107,6 +167,7 @@ class BarangMasukController extends Controller
                         'jenis_perubahan' => 'tambah',
                         'alasan' => 'Barang masuk (langsung diterima) dari ' . ($request->sumber ?? 'tidak diketahui'),
                         'id_user' => Auth::id(),
+                        'id_semester' => $activeSemesterId,
                     ]);
                 }
 
@@ -130,7 +191,7 @@ class BarangMasukController extends Controller
 
     public function show($id)
     {
-        $barangMasuk = BarangMasuk::with(['barang', 'user', 'penanggungJawab'])->findOrFail($id);
+        $barangMasuk = BarangMasuk::with(['barang', 'user', 'penanggungJawab', 'semester'])->findOrFail($id);
         return view('barang-masuk.show', compact('barangMasuk'));
     }
 
@@ -138,10 +199,20 @@ class BarangMasukController extends Controller
     {
         $barangMasuk = BarangMasuk::with(['barang', 'penanggungJawab'])->findOrFail($id);
 
-        // Jika status sudah diterima, tolak akses edit
         if ($barangMasuk->status == 'diterima') {
             return redirect()->route('barang-masuk.index')
                 ->with('error', 'Data dengan status diterima tidak dapat diedit.');
+        }
+
+        // Pastikan semester aktif spesifik dan sama dengan semester barang masuk
+        $required = $this->requireSpecificSemester();
+        if ($required instanceof \Illuminate\Http\RedirectResponse) {
+            return $required;
+        }
+        $activeId = $this->getActiveSemesterId();
+        if ($barangMasuk->id_semester != $activeId) {
+            return redirect()->route('barang-masuk.index')
+                ->with('error', 'Anda hanya dapat mengedit data barang masuk pada semester yang sedang aktif.');
         }
 
         $barang = Barang::orderBy('nama_barang')->get();
@@ -153,17 +224,26 @@ class BarangMasukController extends Controller
     {
         $barangMasuk = BarangMasuk::findOrFail($id);
 
-        // Jika status sudah diterima, tolak proses update
         if ($barangMasuk->status == 'diterima') {
             return redirect()->route('barang-masuk.index')
                 ->with('error', 'Data sudah diterima, tidak dapat diedit.');
+        }
+
+        // Pastikan semester aktif spesifik dan sama
+        $required = $this->requireSpecificSemester();
+        if ($required instanceof \Illuminate\Http\RedirectResponse) {
+            return $required;
+        }
+        $activeId = $this->getActiveSemesterId();
+        if ($barangMasuk->id_semester != $activeId) {
+            return redirect()->route('barang-masuk.index')
+                ->with('error', 'Anda hanya dapat mengedit data pada semester yang sedang aktif.');
         }
 
         $request->validate([
             'id_barang' => 'required|exists:barang,id_barang',
             'jumlah_masuk' => 'required|integer|min:1',
             'tanggal_masuk' => 'required|date',
-            'semester' => 'nullable|string|max:255',
             'sumber' => 'nullable|string|max:255',
             'id_penanggung_jawab' => 'nullable|exists:penanggung_jawab,id_pj',
             'status' => 'required|in:menunggu,diterima',
@@ -178,7 +258,6 @@ class BarangMasukController extends Controller
             $statusLama = $barangMasuk->status;
             $statusBaru = $data['status'];
 
-            // Jika ada upload foto baru
             if ($request->hasFile('bukti_foto')) {
                 if ($barangMasuk->bukti_foto) {
                     Storage::disk('public')->delete($barangMasuk->bukti_foto);
@@ -186,16 +265,11 @@ class BarangMasukController extends Controller
                 $data['bukti_foto'] = $request->file('bukti_foto')->store('bukti_foto', 'public');
             }
 
-            // Update data barang masuk
             $barangMasuk->update($data);
-
-            // Ambil barang yang baru (bisa sama atau berbeda)
             $barang = Barang::find($data['id_barang']);
 
-            // Kasus 1: Barang tidak berubah
             if ($idBarangLama == $data['id_barang']) {
                 if ($statusLama == 'menunggu' && $statusBaru == 'diterima') {
-                    // Dari menunggu ke diterima: tambah stok
                     $stokLama = $barang->stok;
                     $stokBaru = $stokLama + $data['jumlah_masuk'];
                     $barang->update(['stok' => $stokBaru]);
@@ -208,9 +282,9 @@ class BarangMasukController extends Controller
                         'jenis_perubahan' => 'tambah',
                         'alasan' => 'Status berubah dari menunggu ke diterima',
                         'id_user' => Auth::id(),
+                        'id_semester' => $activeId,
                     ]);
                 } elseif ($statusLama == 'diterima' && $statusBaru == 'menunggu') {
-                    // Dari diterima ke menunggu: kurangi stok (hanya jika sebelumnya sudah ditambahkan)
                     $stokLama = $barang->stok;
                     $stokBaru = $stokLama - $jumlahLama;
                     if ($stokBaru < 0) $stokBaru = 0;
@@ -224,12 +298,9 @@ class BarangMasukController extends Controller
                         'jenis_perubahan' => 'kurang',
                         'alasan' => 'Status berubah dari diterima ke menunggu',
                         'id_user' => Auth::id(),
+                        'id_semester' => $activeId,
                     ]);
-                } elseif ($statusLama == 'menunggu' && $statusBaru == 'menunggu') {
-                    // Status tetap menunggu, tidak ada perubahan stok
-                    // Bisa update jumlah? Tapi karena status menunggu, stok belum terpengaruh, jadi aman
                 } elseif ($statusLama == 'diterima' && $statusBaru == 'diterima') {
-                    // Status tetap diterima: ada perubahan jumlah
                     $selisih = $data['jumlah_masuk'] - $jumlahLama;
                     if ($selisih != 0) {
                         $stokLama = $barang->stok;
@@ -248,13 +319,11 @@ class BarangMasukController extends Controller
                             'jenis_perubahan' => $selisih > 0 ? 'tambah' : 'kurang',
                             'alasan' => 'Edit jumlah barang masuk (status tetap diterima)',
                             'id_user' => Auth::id(),
+                            'id_semester' => $activeId,
                         ]);
                     }
                 }
-            }
-            // Kasus 2: Barang berubah
-            else {
-                // Kurangi stok barang lama jika status lama adalah 'diterima'
+            } else {
                 if ($statusLama == 'diterima') {
                     $barangLama = Barang::find($idBarangLama);
                     $stokLamaBarangLama = $barangLama->stok;
@@ -270,10 +339,10 @@ class BarangMasukController extends Controller
                         'jenis_perubahan' => 'kurang',
                         'alasan' => 'Barang dipindahkan ke barang lain (edit penerimaan)',
                         'id_user' => Auth::id(),
+                        'id_semester' => $activeId,
                     ]);
                 }
 
-                // Tambah stok barang baru jika status baru adalah 'diterima'
                 if ($statusBaru == 'diterima') {
                     $stokLamaBarangBaru = $barang->stok;
                     $stokBaruBarangBaru = $stokLamaBarangBaru + $data['jumlah_masuk'];
@@ -287,12 +356,10 @@ class BarangMasukController extends Controller
                         'jenis_perubahan' => 'tambah',
                         'alasan' => 'Barang dipindahkan ke barang ini (edit penerimaan)',
                         'id_user' => Auth::id(),
+                        'id_semester' => $activeId,
                     ]);
                 }
             }
-
-            // Hapus baris sync yang salah
-            // $barangMasuk->penanggungJawab()->sync(...); // TIDAK PERLU, hapus
 
             LogAktivitas::create([
                 'id_user' => Auth::id(),
@@ -304,7 +371,6 @@ class BarangMasukController extends Controller
             return redirect()->route('barang-masuk.index')->with('success', 'Data penerimaan berhasil diupdate.');
         } catch (\Exception $e) {
             DB::rollBack();
-            // Tambahkan log untuk debugging
             \Log::error('Error update barang masuk: ' . $e->getMessage());
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
@@ -348,6 +414,7 @@ class BarangMasukController extends Controller
                     'jenis_perubahan' => 'tambah',
                     'alasan' => 'Barang masuk diterima (verifikasi) dari ' . ($barangMasuk->sumber ?? 'tidak diketahui'),
                     'id_user' => Auth::id(),
+                    'id_semester' => $barangMasuk->id_semester,
                 ]);
 
                 $barangMasuk->update(['status' => 'diterima']);
@@ -371,14 +438,20 @@ class BarangMasukController extends Controller
     {
         $barangMasuk = BarangMasuk::findOrFail($id);
 
+        // Pastikan semester aktif sama (jika semester spesifik) atau izinkan jika admin dalam mode "Semua Semester"? Biarkan saja dengan pengecekan
+        $activeId = $this->getActiveSemesterId();
+        if ($activeId && $activeId != 0 && $barangMasuk->id_semester != $activeId) {
+            return redirect()->route('barang-masuk.index')
+                ->with('error', 'Anda hanya dapat menghapus data pada semester yang sedang aktif.');
+        }
+
         DB::beginTransaction();
         try {
             $barang = $barangMasuk->barang;
             if ($barangMasuk->status == 'diterima') {
                 $stokLama = $barang->stok;
                 $stokBaru = $stokLama - $barangMasuk->jumlah_masuk;
-                if ($stokBaru < 0)
-                    $stokBaru = 0;
+                if ($stokBaru < 0) $stokBaru = 0;
                 $barang->update(['stok' => $stokBaru]);
                 $barang->decrement('jumlah_baik', $barangMasuk->jumlah_masuk);
 
@@ -389,6 +462,7 @@ class BarangMasukController extends Controller
                     'jenis_perubahan' => 'kurang',
                     'alasan' => 'Penghapusan data barang masuk (sudah diterima)',
                     'id_user' => Auth::id(),
+                    'id_semester' => $barangMasuk->id_semester,
                 ]);
             }
 
@@ -414,7 +488,7 @@ class BarangMasukController extends Controller
 
     public function detailPemeriksaan($id)
     {
-        $barangMasuk = BarangMasuk::with(['barang', 'user', 'penanggungJawab'])->findOrFail($id);
+        $barangMasuk = BarangMasuk::with(['barang', 'user', 'penanggungJawab', 'semester'])->findOrFail($id);
         return view('barang-masuk.detail-pemeriksaan', compact('barangMasuk'));
     }
 
@@ -429,7 +503,6 @@ class BarangMasukController extends Controller
         $barangMasuk = BarangMasuk::findOrFail($id);
         $kondisi = $request->kondisi_penerimaan;
 
-        // Validasi input
         $request->validate([
             'kondisi_penerimaan' => 'required|in:baik,rusak,tidak_sesuai',
             'bukti_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
@@ -438,7 +511,6 @@ class BarangMasukController extends Controller
 
         DB::beginTransaction();
         try {
-            // Simpan data kondisi, catatan, dan foto
             $data = $request->only(['kondisi_penerimaan', 'catatan_pemeriksaan']);
             if ($request->hasFile('bukti_foto')) {
                 if ($barangMasuk->bukti_foto) {
@@ -452,7 +524,6 @@ class BarangMasukController extends Controller
             $jumlah = $barangMasuk->jumlah_masuk;
 
             if ($kondisi == 'baik') {
-                // Konfirmasi diterima, stok + jumlah, jumlah_baik + jumlah
                 $barangMasuk->status = 'diterima';
                 $barangMasuk->save();
 
@@ -467,11 +538,11 @@ class BarangMasukController extends Controller
                     'jenis_perubahan' => 'tambah',
                     'alasan' => 'Penerimaan barang (kondisi baik)',
                     'id_user' => Auth::id(),
+                    'id_semester' => $barangMasuk->id_semester,
                 ]);
 
                 $message = 'Penerimaan barang telah dikonfirmasi (kondisi baik) dan stok berhasil ditambahkan.';
             } elseif ($kondisi == 'rusak') {
-                // Konfirmasi diterima, stok + jumlah, jumlah_rusak + jumlah
                 $barangMasuk->status = 'diterima';
                 $barangMasuk->save();
 
@@ -486,13 +557,12 @@ class BarangMasukController extends Controller
                     'jenis_perubahan' => 'tambah',
                     'alasan' => 'Penerimaan barang (kondisi rusak)',
                     'id_user' => Auth::id(),
+                    'id_semester' => $barangMasuk->id_semester,
                 ]);
 
                 $message = 'Penerimaan barang telah dikonfirmasi (kondisi rusak) dan stok berhasil ditambahkan.';
-            } else { // kondisi = 'tidak_sesuai'
-                // Status tetap menunggu, tidak mengubah stok
-                // Hanya menyimpan data kondisi dan catatan (sudah diupdate di atas)
-                $barangMasuk->status = 'menunggu'; // pastikan tetap menunggu
+            } else {
+                $barangMasuk->status = 'menunggu';
                 $barangMasuk->save();
                 $message = 'Data kondisi disimpan, namun barang tidak diterima karena tidak sesuai.';
             }

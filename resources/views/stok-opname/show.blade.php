@@ -27,6 +27,9 @@
                         <tr><th>Keterangan</th><td>{{ $opname->keterangan ?? '-' }}</td></tr>
                         <tr><th>Dibuat Oleh</th><td>{{ $opname->user->nama ?? '-' }}</td></tr>
                         <tr><th>Tanggal Input</th><td>{{ $opname->created_at->format('d M Y H:i') }}</td></tr>
+                        @if($opname->semester)
+                        <tr><th>Semester</th><td>{{ $opname->semester->nama_semester }} - {{ $opname->semester->tahun_ajaran }}</td></tr>
+                        @endif
                     </table>
                 </div>
             </div>
@@ -60,15 +63,9 @@
                                 {{ $detail->selisih > 0 ? '+' . $detail->selisih : $detail->selisih }}
                             </td>
                             <td>
-                                @php
-                                    $status = '';
-                                    if ($detail->selisih == 0) $status = 'Sesuai';
-                                    elseif ($detail->selisih > 0) $status = 'Kelebihan';
-                                    else $status = 'Kekurangan';
-                                @endphp
                                 <span class="badge 
-                                    {{ $status == 'Sesuai' ? 'bg-success' : ($status == 'Kelebihan' ? 'bg-warning' : 'bg-danger') }}">
-                                    {{ $status }}
+                                    {{ $detail->keterangan == 'Sesuai' ? 'bg-success' : ($detail->keterangan == 'Kelebihan' ? 'bg-warning' : 'bg-danger') }}">
+                                    {{ $detail->keterangan ?? '-' }}
                                 </span>
                             </td>
                             <td>{{ $detail->catatan ?? '-' }}</td>

@@ -23,12 +23,15 @@ class Peminjaman extends Model
         'surat_peminjaman',
         'catatan_awal',
         'status_transaksi',
-        'id_user'
+        'id_user',
+        'id_semester',
+        'last_overdue_reminder_date',  // <-- Tambahan untuk pencatatan pengingat overdue
     ];
 
     protected $casts = [
         'tanggal_penggunaan' => 'date',
         'tanggal_jatuh_tempo' => 'date',
+        'last_overdue_reminder_date' => 'date', // <-- Cast ke date
     ];
 
     public function user()
@@ -39,6 +42,11 @@ class Peminjaman extends Model
     public function details()
     {
         return $this->hasMany(PeminjamanDetail::class, 'id_peminjaman');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
     }
 
     public static function generateKodeTransaksi()

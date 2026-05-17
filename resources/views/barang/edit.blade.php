@@ -17,7 +17,6 @@
         </div>
     </div>
 
-    <!-- Menampilkan error jika ada -->
     @if ($errors->any())
     <div class="alert alert-danger alert-dismissible fade show rounded-4 mb-4" role="alert">
         <strong>Terjadi kesalahan!</strong>
@@ -112,34 +111,11 @@
                         @enderror
                     </div>
 
-                    <!-- Total Stok (readonly, otomatis) -->
+                    <!-- Total Stok (readonly) -->
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold">Total Stok (Otomatis)</label>
                         <input type="number" id="total_stok" class="form-control form-control-sm rounded-pill" readonly>
                         <small class="text-muted">Akan dihitung otomatis</small>
-                    </div>
-
-                    <!-- Semester -->
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Semester</label>
-                        <select name="semester" class="form-select form-select-sm rounded-pill @error('semester') is-invalid @enderror">
-                            <option value="">Pilih Semester</option>
-                            <option value="Ganjil" {{ old('semester', $barang->semester) == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
-                            <option value="Genap" {{ old('semester', $barang->semester) == 'Genap' ? 'selected' : '' }}>Genap</option>
-                        </select>
-                        @error('semester')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <!-- Tahun Ajaran -->
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Tahun Ajaran</label>
-                        <input type="text" name="tahun_ajaran" class="form-control form-control-sm rounded-pill @error('tahun_ajaran') is-invalid @enderror"
-                            value="{{ old('tahun_ajaran', $barang->tahun_ajaran) }}" placeholder="Contoh: 2024/2025">
-                        @error('tahun_ajaran')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
 
                     <!-- Kapasitas -->
@@ -224,15 +200,14 @@
 </div>
 
 <script>
-    // Fungsi untuk menghitung total stok
     function hitungTotal() {
         const baik = parseInt(document.getElementById('jumlah_baik').value) || 0;
         const rusak = parseInt(document.getElementById('jumlah_rusak').value) || 0;
-        const total = baik + rusak;
+        const hilang = parseInt(document.getElementById('jumlah_hilang').value) || 0;
+        const total = baik + rusak + hilang;
         document.getElementById('total_stok').value = total;
     }
 
-    // Pastikan elemen ada sebelum menambahkan event listener
     const jumlahBaik = document.getElementById('jumlah_baik');
     const jumlahRusak = document.getElementById('jumlah_rusak');
     const jumlahHilang = document.getElementById('jumlah_hilang');
@@ -241,7 +216,6 @@
     if (jumlahRusak) jumlahRusak.addEventListener('input', hitungTotal);
     if (jumlahHilang) jumlahHilang.addEventListener('input', hitungTotal);
 
-    // Hitung awal
     hitungTotal();
 </script>
 @endsection

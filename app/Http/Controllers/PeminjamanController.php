@@ -6,18 +6,56 @@ use App\Models\Barang;
 use App\Models\Peminjaman;
 use App\Models\PeminjamanDetail;
 use App\Models\LogAktivitas;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PeminjamanCreated;
+use PDF; // DomPDF facade
+use Carbon\Carbon;
 
 class PeminjamanController extends Controller
 {
+    private function getActiveSemesterId()
+    {
+        return session('active_semester_id');
+    }
+
+    /**
+     * Pastikan semester aktif spesifik (bukan 0) untuk operasi yang memerlukan penyimpanan.
+     */
+    private function requireSpecificSemester()
+    {
+        $activeId = $this->getActiveSemesterId();
+        if (!$activeId || $activeId == 0) {
+            return redirect()->route('semester.daftar')
+                ->with('warning', 'Silakan pilih semester tertentu (bukan "Semua Semester") untuk melakukan transaksi peminjaman.');
+        }
+        if (!Semester::where('id_semester', $activeId)->exists()) {
+            Session::forget('active_semester_id');
+            return redirect()->route('pilih-semester')
+                ->with('error', 'Semester tidak valid. Silakan pilih semester lagi.');
+        }
+        return $activeId;
+    }
+
     public function index(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
+
         $query = Peminjaman::with('details.barang')
             ->where('status_transaksi', 'aktif')
             ->orderBy('created_at', 'desc');
+
+        if ($activeSemesterId != 0) {
+            $query->where('id_semester', $activeSemesterId);
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -29,16 +67,30 @@ class PeminjamanController extends Controller
         }
 
         $peminjaman = $query->paginate(10)->withQueryString();
-        $totalAktif = Peminjaman::where('status_transaksi', 'aktif')->count();
-        $totalBarangDipinjam = PeminjamanDetail::whereHas('peminjaman', function ($q) {
+
+        $totalAktifQuery = Peminjaman::where('status_transaksi', 'aktif');
+        if ($activeSemesterId != 0) {
+            $totalAktifQuery->where('id_semester', $activeSemesterId);
+        }
+        $totalAktif = $totalAktifQuery->count();
+
+        $totalBarangDipinjamQuery = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($activeSemesterId) {
             $q->where('status_transaksi', 'aktif');
-        })->sum('jumlah');
-        $totalBarangSudahKembali = PeminjamanDetail::whereHas('peminjaman', function ($q) {
+            if ($activeSemesterId != 0) {
+                $q->where('id_semester', $activeSemesterId);
+            }
+        });
+        $totalBarangDipinjam = $totalBarangDipinjamQuery->sum('jumlah');
+
+        $totalBarangSudahKembaliQuery = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($activeSemesterId) {
             $q->where('status_transaksi', 'aktif');
-        })->where('status_item', 'kembali')->sum('jumlah');
+            if ($activeSemesterId != 0) {
+                $q->where('id_semester', $activeSemesterId);
+            }
+        })->where('status_item', 'kembali');
+        $totalBarangSudahKembali = $totalBarangSudahKembaliQuery->sum('jumlah');
         $totalBarangBelumKembali = $totalBarangDipinjam - $totalBarangSudahKembali;
 
-        // Hitung untuk setiap peminjaman: jumlah item yang masih dipinjam (belum kembali)
         foreach ($peminjaman as $p) {
             $p->total_dipinjam = $p->details->sum('jumlah');
             $p->total_sudah_kembali = $p->details->where('status_item', 'kembali')->sum('jumlah');
@@ -50,9 +102,18 @@ class PeminjamanController extends Controller
 
     public function riwayat(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
+
         $query = Peminjaman::with('details.barang')
             ->where('status_transaksi', 'selesai')
             ->orderBy('created_at', 'desc');
+
+        if ($activeSemesterId != 0) {
+            $query->where('id_semester', $activeSemesterId);
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -63,7 +124,6 @@ class PeminjamanController extends Controller
             });
         }
 
-        // Filter tanggal awal & akhir (berdasarkan tanggal kembali)
         if ($request->filled('tanggal_awal') || $request->filled('tanggal_akhir')) {
             $query->whereHas('details', function ($q) use ($request) {
                 if ($request->filled('tanggal_awal')) {
@@ -77,38 +137,66 @@ class PeminjamanController extends Controller
 
         $peminjaman = $query->paginate(10)->withQueryString();
 
-        // Statistik card
-        $totalSelesai = Peminjaman::where('status_transaksi', 'selesai')->count();
-        $totalBarangPernahDipinjam = PeminjamanDetail::whereHas('peminjaman', function ($q) {
-            $q->where('status_transaksi', 'selesai');
-        })->sum('jumlah');
+        $totalSelesaiQuery = Peminjaman::where('status_transaksi', 'selesai');
+        if ($activeSemesterId != 0) {
+            $totalSelesaiQuery->where('id_semester', $activeSemesterId);
+        }
+        $totalSelesai = $totalSelesaiQuery->count();
 
-        // Jumlah pengembalian (transaksi detail yang sudah kembali)
-        $totalPengembalian = PeminjamanDetail::whereHas('peminjaman', function ($q) {
+        $totalBarangPernahDipinjamQuery = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($activeSemesterId) {
             $q->where('status_transaksi', 'selesai');
-        })->where('status_item', 'kembali')->count();
+            if ($activeSemesterId != 0) {
+                $q->where('id_semester', $activeSemesterId);
+            }
+        });
+        $totalBarangPernahDipinjam = $totalBarangPernahDipinjamQuery->sum('jumlah');
 
-        // Rusak setelah peminjaman (kondisi_setelah = 'rusak')
-        $rusakSetelahPeminjaman = PeminjamanDetail::whereHas('peminjaman', function ($q) {
+        $totalPengembalianQuery = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($activeSemesterId) {
             $q->where('status_transaksi', 'selesai');
-        })->where('kondisi_setelah', 'rusak')->sum('jumlah');
+            if ($activeSemesterId != 0) {
+                $q->where('id_semester', $activeSemesterId);
+            }
+        })->where('status_item', 'kembali');
+        $totalPengembalian = $totalPengembalianQuery->count();
 
-        // Hilang setelah peminjaman (kondisi_setelah = 'hilang')
-        $hilangSetelahPeminjaman = PeminjamanDetail::whereHas('peminjaman', function ($q) {
+        $rusakSetelahPeminjamanQuery = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($activeSemesterId) {
             $q->where('status_transaksi', 'selesai');
-        })->where('kondisi_setelah', 'hilang')->sum('jumlah');
+            if ($activeSemesterId != 0) {
+                $q->where('id_semester', $activeSemesterId);
+            }
+        })->where('kondisi_setelah', 'rusak');
+        $rusakSetelahPeminjaman = $rusakSetelahPeminjamanQuery->sum('jumlah');
+
+        $hilangSetelahPeminjamanQuery = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($activeSemesterId) {
+            $q->where('status_transaksi', 'selesai');
+            if ($activeSemesterId != 0) {
+                $q->where('id_semester', $activeSemesterId);
+            }
+        })->where('kondisi_setelah', 'hilang');
+        $hilangSetelahPeminjaman = $hilangSetelahPeminjamanQuery->sum('jumlah');
 
         return view('peminjaman.riwayat', compact('peminjaman', 'totalSelesai', 'totalBarangPernahDipinjam', 'totalPengembalian', 'rusakSetelahPeminjaman', 'hilangSetelahPeminjaman'));
     }
 
     public function create()
     {
+        $required = $this->requireSpecificSemester();
+        if ($required instanceof \Illuminate\Http\RedirectResponse) {
+            return $required;
+        }
+
         $barang = Barang::orderBy('nama_barang')->get();
         return view('peminjaman.create', compact('barang'));
     }
 
     public function store(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')
+                ->with('warning', 'Pilih semester tertentu terlebih dahulu untuk mencatat peminjaman.');
+        }
+
         $request->validate([
             'nama_peminjam' => 'required|string|max:255',
             'nim' => 'nullable|string|max:50',
@@ -120,12 +208,10 @@ class PeminjamanController extends Controller
             'items' => 'required|array|min:1',
             'items.*.id_barang' => 'required|exists:barang,id_barang',
             'items.*.jumlah' => 'required|integer|min:1',
-            // HAPUS validasi items.*.kondisi_awal
         ]);
 
         DB::beginTransaction();
         try {
-            // Cek stok baik untuk setiap barang
             foreach ($request->items as $item) {
                 $barang = Barang::find($item['id_barang']);
                 if ($barang->jumlah_baik < $item['jumlah']) {
@@ -137,6 +223,7 @@ class PeminjamanController extends Controller
             $data['kode_transaksi'] = Peminjaman::generateKodeTransaksi();
             $data['id_user'] = Auth::id();
             $data['status_transaksi'] = 'aktif';
+            $data['id_semester'] = $activeSemesterId;
 
             if ($request->hasFile('surat_peminjaman')) {
                 $data['surat_peminjaman'] = $request->file('surat_peminjaman')->store('surat_peminjaman', 'public');
@@ -150,11 +237,11 @@ class PeminjamanController extends Controller
                 $peminjaman->details()->create([
                     'id_barang' => $item['id_barang'],
                     'jumlah' => $item['jumlah'],
-                    'kondisi_awal' => 'baik', // Default 'baik'
+                    'kondisi_awal' => 'baik',
                     'status_item' => 'dipinjam',
+                    'id_semester' => $activeSemesterId,
                 ]);
 
-                // Kurangi stok baik dan stok total
                 $barang->decrement('jumlah_baik', $item['jumlah']);
                 $barang->decrement('stok', $item['jumlah']);
             }
@@ -166,7 +253,14 @@ class PeminjamanController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('peminjaman.index')->with('success', 'Peminjaman berhasil ditambahkan.');
+
+            try {
+                Mail::to($peminjaman->email)->send(new PeminjamanCreated($peminjaman));
+            } catch (\Exception $e) {
+                \Log::error('Gagal mengirim email konfirmasi peminjaman: ' . $e->getMessage());
+            }
+
+            return redirect()->route('peminjaman.index')->with('success', 'Peminjaman berhasil ditambahkan. Email konfirmasi telah dikirim ke peminjam.');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -181,18 +275,44 @@ class PeminjamanController extends Controller
 
     public function formPengembalian($id)
     {
-        $peminjaman = Peminjaman::with(['details' => function ($q) {
-            $q->where('status_item', 'dipinjam');
-        }, 'details.barang'])->where('status_transaksi', 'aktif')->findOrFail($id);
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
+
+        if ($activeSemesterId != 0) {
+            $peminjaman = Peminjaman::where('id_peminjaman', $id)
+                ->where('id_semester', $activeSemesterId)
+                ->where('status_transaksi', 'aktif')
+                ->with(['details' => function ($q) {
+                    $q->where('status_item', 'dipinjam');
+                }, 'details.barang'])
+                ->first();
+            if (!$peminjaman) {
+                return redirect()->route('peminjaman.index')->with('error', 'Peminjaman tidak ditemukan atau tidak dapat diakses pada semester saat ini.');
+            }
+        } else {
+            $peminjaman = Peminjaman::with(['details' => function ($q) {
+                $q->where('status_item', 'dipinjam');
+            }, 'details.barang'])->where('status_transaksi', 'aktif')->findOrFail($id);
+        }
         return view('peminjaman.pengembalian', compact('peminjaman'));
     }
 
     public function prosesPengembalian(Request $request, $id)
     {
-        $peminjaman = Peminjaman::findOrFail($id);
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
 
+        $peminjaman = Peminjaman::findOrFail($id);
         if ($peminjaman->status_transaksi != 'aktif') {
             return back()->with('error', 'Transaksi sudah selesai.');
+        }
+
+        if ($activeSemesterId != 0 && $peminjaman->id_semester != $activeSemesterId) {
+            return back()->with('error', 'Anda tidak dapat memproses pengembalian peminjaman dari semester lain.');
         }
 
         $request->validate([
@@ -206,7 +326,6 @@ class PeminjamanController extends Controller
 
         DB::beginTransaction();
         try {
-            // Jika klik "Kembalikan Semua", ambil semua detail yang masih dipinjam
             if ($request->has('kembalikan_semua') && $request->kembalikan_semua == 1) {
                 $itemsToReturn = $peminjaman->details()->where('status_item', 'dipinjam')->get();
                 $selectedDetails = [];
@@ -221,7 +340,6 @@ class PeminjamanController extends Controller
                 $selectedDetails = $request->items;
             }
 
-            $allReturned = true;
             foreach ($selectedDetails as $item) {
                 $detail = PeminjamanDetail::find($item['id_detail']);
                 if ($detail && $detail->status_item == 'dipinjam') {
@@ -244,7 +362,6 @@ class PeminjamanController extends Controller
                 }
             }
 
-            // Cek apakah semua detail sudah kembali
             if ($peminjaman->details()->where('status_item', 'dipinjam')->count() == 0) {
                 $peminjaman->update(['status_transaksi' => 'selesai']);
             }
@@ -265,14 +382,21 @@ class PeminjamanController extends Controller
 
     public function destroy($id)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
+
         $peminjaman = Peminjaman::with('details')->findOrFail($id);
+        if ($activeSemesterId != 0 && $peminjaman->id_semester != $activeSemesterId) {
+            return redirect()->route('peminjaman.index')->with('error', 'Anda hanya dapat menghapus data peminjaman pada semester yang sedang aktif.');
+        }
 
         DB::beginTransaction();
         try {
             if ($peminjaman->status_transaksi == 'aktif') {
                 foreach ($peminjaman->details as $detail) {
                     $barang = Barang::find($detail->id_barang);
-                    // Kembalikan jumlah_baik (karena saat peminjaman diambil dari jumlah_baik)
                     $barang->increment('jumlah_baik', $detail->jumlah);
                     $barang->increment('stok', $detail->jumlah);
                 }
@@ -296,5 +420,52 @@ class PeminjamanController extends Controller
             DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
+    }
+
+    // ==================== EKSPOR DETAIL PEMINJAMAN ====================
+
+    /**
+     * Ekspor detail peminjaman ke PDF
+     */
+    public function exportDetailPdf($id)
+    {
+        $peminjaman = Peminjaman::with('details.barang')->findOrFail($id);
+        $safeFilename = 'detail_peminjaman_' . str_replace('/', '_', $peminjaman->kode_transaksi) . '.pdf';
+        $pdf = PDF::loadView('laporan.pdf.detail_peminjaman', compact('peminjaman'));
+        return $pdf->download($safeFilename);
+    }
+
+    /**
+     * Ekspor detail peminjaman ke CSV
+     */
+    public function exportDetailCsv($id)
+    {
+        $peminjaman = Peminjaman::with('details.barang')->findOrFail($id);
+        $safeFilename = 'detail_peminjaman_' . str_replace('/', '_', $peminjaman->kode_transaksi) . '.csv';
+
+        $headers = ['Nama Barang', 'Merk', 'Jumlah', 'Kondisi Setelah', 'Status Item', 'Tanggal Kembali', 'Catatan Kembali'];
+
+        $callback = function () use ($peminjaman, $headers) {
+            $handle = fopen('php://output', 'w');
+            fputs($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, $headers);
+            foreach ($peminjaman->details as $detail) {
+                fputcsv($handle, [
+                    $detail->barang->nama_barang,
+                    $detail->barang->merk ?? '-',
+                    $detail->jumlah,
+                    $detail->kondisi_setelah ?? '-',
+                    $detail->status_item,
+                    $detail->tanggal_kembali_aktual ? Carbon::parse($detail->tanggal_kembali_aktual)->format('d/m/Y') : '-',
+                    $detail->catatan_kembali ?? '-'
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $safeFilename . '"',
+        ]);
     }
 }

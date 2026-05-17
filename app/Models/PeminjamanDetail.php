@@ -19,7 +19,8 @@ class PeminjamanDetail extends Model
         'kondisi_setelah',
         'catatan_kembali',
         'tanggal_kembali_aktual',
-        'status_item'
+        'status_item',
+        'id_semester'   // tambah
     ];
 
     protected $casts = [
@@ -34,5 +35,10 @@ class PeminjamanDetail extends Model
     public function barang()
     {
         return $this->belongsTo(Barang::class, 'id_barang');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
     }
 }

@@ -50,7 +50,7 @@
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold">Tanggal Datang <span class="text-danger">*</span></label>
                         <input type="date" name="tanggal_masuk" class="form-control form-control-sm rounded-pill @error('tanggal_masuk') is-invalid @enderror"
-                            value="{{ old('tanggal_masuk', $barangMasuk->tanggal_masuk instanceof \Carbon\Carbon ? $barangMasuk->tanggal_masuk->format('Y-m-d') : date('Y-m-d', strtotime($barangMasuk->tanggal_masuk))) }}" required>
+                            value="{{ old('tanggal_masuk', $barangMasuk->tanggal_masuk ? date('Y-m-d', strtotime($barangMasuk->tanggal_masuk)) : '') }}" required>
                         @error('tanggal_masuk')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -61,18 +61,6 @@
                         <input type="text" name="sumber" class="form-control form-control-sm rounded-pill @error('sumber') is-invalid @enderror"
                             value="{{ old('sumber', $barangMasuk->sumber) }}" placeholder="Contoh: PT. Science Medika">
                         @error('sumber')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label small fw-semibold">Semester</label>
-                        <select name="semester" class="form-select form-select-sm rounded-pill @error('semester') is-invalid @enderror">
-                            <option value="">Pilih Semester</option>
-                            <option value="Ganjil" {{ old('semester', $barangMasuk->semester) == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
-                            <option value="Genap" {{ old('semester', $barangMasuk->semester) == 'Genap' ? 'selected' : '' }}>Genap</option>
-                        </select>
-                        @error('semester')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

@@ -16,7 +16,6 @@
         </div>
     </div>
 
-    <!-- Card Statistik -->
     @php
         $totalItem = $peminjaman->details->sum('jumlah');
         $totalDikembalikan = $peminjaman->details->where('status_item', 'kembali')->sum('jumlah');

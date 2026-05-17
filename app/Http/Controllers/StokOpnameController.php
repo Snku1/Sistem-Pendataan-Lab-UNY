@@ -6,28 +6,59 @@ use App\Models\Barang;
 use App\Models\StokOpname;
 use App\Models\StokOpnameDetail;
 use App\Models\LogAktivitas;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Session;
 
 class StokOpnameController extends Controller
 {
+    private function getActiveSemesterId()
+    {
+        return session('active_semester_id');
+    }
+
+    /**
+     * Pastikan semester aktif spesifik (bukan 0) untuk operasi yang memerlukan penyimpanan.
+     */
+    private function requireSpecificSemester()
+    {
+        $activeId = $this->getActiveSemesterId();
+        if (!$activeId || $activeId == 0) {
+            return redirect()->route('semester.daftar')
+                ->with('warning', 'Silakan pilih semester tertentu (bukan "Semua Semester") untuk melakukan stok opname.');
+        }
+        if (!Semester::where('id_semester', $activeId)->exists()) {
+            Session::forget('active_semester_id');
+            return redirect()->route('pilih-semester')
+                ->with('error', 'Semester tidak valid. Silakan pilih semester lagi.');
+        }
+        return $activeId;
+    }
+
     public function index(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
+
         $query = StokOpname::with('user')->orderBy('created_at', 'desc');
 
-        // Filter pencarian kode opname
+        if ($activeSemesterId != 0) {
+            $query->where('id_semester', $activeSemesterId);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where('kode_opname', 'like', "%{$search}%");
         }
 
-        // Filter tanggal awal
         if ($request->filled('tanggal_awal')) {
             $query->whereDate('tanggal_opname', '>=', $request->tanggal_awal);
         }
 
-        // Filter tanggal akhir
         if ($request->filled('tanggal_akhir')) {
             $query->whereDate('tanggal_opname', '<=', $request->tanggal_akhir);
         }
@@ -39,13 +70,28 @@ class StokOpnameController extends Controller
 
     public function create()
     {
-        // Ambil semua barang, urutkan berdasarkan kode atau nama
-        $barang = Barang::orderBy('kode_barang')->get();
+        $required = $this->requireSpecificSemester();
+        if ($required instanceof \Illuminate\Http\RedirectResponse) {
+            return $required;
+        }
+
+        $activeSemesterId = $this->getActiveSemesterId();
+        // Hanya tampilkan barang dari semester aktif
+        $barang = Barang::where('id_semester', $activeSemesterId)
+            ->orderBy('kode_barang')
+            ->get();
+
         return view('stok-opname.create', compact('barang'));
     }
 
     public function store(Request $request)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if (!$activeSemesterId || $activeSemesterId == 0) {
+            return redirect()->route('semester.daftar')
+                ->with('warning', 'Pilih semester tertentu terlebih dahulu untuk melakukan stok opname.');
+        }
+
         $request->validate([
             'tanggal_opname' => 'required|date',
             'keterangan' => 'nullable|string',
@@ -60,6 +106,7 @@ class StokOpnameController extends Controller
             $data['kode_opname'] = StokOpname::generateKodeOpname();
             $data['id_user'] = Auth::id();
             $data['status'] = 'selesai';
+            $data['id_semester'] = $activeSemesterId;
 
             $opname = StokOpname::create($data);
 
@@ -69,13 +116,23 @@ class StokOpnameController extends Controller
                 $stokFisik = $item['stok_fisik'];
                 $selisih = $stokFisik - $stokSistem;
 
+                // Tentukan keterangan berdasarkan selisih
+                if ($selisih == 0) {
+                    $keterangan = 'Sesuai';
+                } elseif ($selisih > 0) {
+                    $keterangan = 'Kelebihan';
+                } else {
+                    $keterangan = 'Kekurangan';
+                }
+
                 StokOpnameDetail::create([
-                    'id_opname' => $opname->id_opname,
-                    'id_barang' => $item['id_barang'],
+                    'id_opname'   => $opname->id_opname,
+                    'id_barang'   => $item['id_barang'],
                     'stok_sistem' => $stokSistem,
-                    'stok_fisik' => $stokFisik,
-                    'selisih' => $selisih,
-                    'catatan' => $item['catatan'] ?? null,
+                    'stok_fisik'  => $stokFisik,
+                    'selisih'     => $selisih,
+                    'keterangan'  => $keterangan,   // <-- kolom baru
+                    'catatan'     => $item['catatan'] ?? null,
                 ]);
             }
 
@@ -101,7 +158,16 @@ class StokOpnameController extends Controller
 
     public function destroy($id)
     {
+        $activeSemesterId = $this->getActiveSemesterId();
+        if ($activeSemesterId === null) {
+            return redirect()->route('pilih-semester');
+        }
+
         $opname = StokOpname::findOrFail($id);
+        if ($activeSemesterId != 0 && $opname->id_semester != $activeSemesterId) {
+            return redirect()->route('stok-opname.index')->with('error', 'Anda hanya dapat menghapus data stok opname pada semester yang sedang aktif.');
+        }
+
         $opname->delete();
 
         LogAktivitas::create([

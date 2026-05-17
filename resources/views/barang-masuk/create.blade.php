@@ -21,7 +21,7 @@
             <form action="{{ route('barang-masuk.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
-                <!-- Bagian informasi umum (sama untuk semua barang) -->
+                <!-- Bagian informasi umum -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Tanggal Datang <span class="text-danger">*</span></label>
@@ -42,18 +42,6 @@
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label small fw-semibold">Semester</label>
-                        <select name="semester" class="form-select form-select-sm rounded-pill @error('semester') is-invalid @enderror">
-                            <option value="">Pilih Semester</option>
-                            <option value="Ganjil" {{ old('semester') == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
-                            <option value="Genap" {{ old('semester') == 'Genap' ? 'selected' : '' }}>Genap</option>
-                        </select>
-                        @error('semester')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="col-md-6">
                         <label class="form-label small fw-semibold">Pemeriksa Barang (Teknisi)</label>
                         <select name="id_penanggung_jawab" class="form-select form-select-sm rounded-pill @error('id_penanggung_jawab') is-invalid @enderror">
                             <option value="">Pilih Pemeriksa</option>
@@ -85,7 +73,7 @@
                 <hr class="my-4">
                 <h5 class="fw-semibold mb-3">Daftar Barang yang Diterima</h5>
                 <div id="items-container">
-                    <!-- Baris pertama (dengan label) -->
+                    <!-- Baris pertama -->
                     <div class="item-row row g-2 mb-3 align-items-start">
                         <div class="col-md-5">
                             <label class="form-label small fw-semibold">Nama Barang <span class="text-danger">*</span></label>
@@ -129,16 +117,12 @@
 
 <script>
     let itemIndex = 0;
-
     function cloneNewRow() {
         const container = document.getElementById('items-container');
         const firstRow = container.querySelector('.item-row');
         if (!firstRow) return null;
-
         const newRow = firstRow.cloneNode(true);
         itemIndex++;
-
-        // Update name attributes
         const select = newRow.querySelector('.barang-select');
         const jumlahInput = newRow.querySelector('.jumlah-input');
         const fotoInput = newRow.querySelector('.foto-input');
@@ -152,34 +136,24 @@
         }
         if (fotoInput) {
             fotoInput.name = `items[${itemIndex}][foto]`;
-            fotoInput.value = ''; // reset file input
+            fotoInput.value = '';
         }
-
-        // Hapus label pada baris baru
         const labels = newRow.querySelectorAll('.col-md-5 > label, .col-md-2 > label, .col-md-4 > label');
         labels.forEach(label => label.remove());
-
-        // Tampilkan tombol hapus
         const removeBtn = newRow.querySelector('.remove-item');
         if (removeBtn) removeBtn.style.display = 'inline-block';
-
         return newRow;
     }
-
     document.getElementById('add-item').addEventListener('click', function() {
         const newRow = cloneNewRow();
         if (newRow) {
             document.getElementById('items-container').appendChild(newRow);
             const removeBtn = newRow.querySelector('.remove-item');
             if (removeBtn) {
-                removeBtn.addEventListener('click', function() {
-                    newRow.remove();
-                });
+                removeBtn.addEventListener('click', function() { newRow.remove(); });
             }
         }
     });
-
-    // Sembunyikan tombol hapus di baris pertama
     const firstRemoveBtn = document.querySelector('.item-row .remove-item');
     if (firstRemoveBtn) firstRemoveBtn.style.display = 'none';
 </script>

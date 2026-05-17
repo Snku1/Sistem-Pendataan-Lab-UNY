@@ -61,7 +61,7 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Hilang / Belum Kembali</p>
+                        <p class="text-muted mb-1 small">Hilang / Tidak Kembali</p>
                         <h3 class="fw-bold text-danger mb-0">{{ $hilangSetelahPeminjaman ?? 0 }} unit</h3>
                     </div>
                     <div class="rounded-circle bg-danger bg-opacity-10 p-3">
@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <!-- Filter -->
+    <!-- Filter (tanpa semester) -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3 align-items-end">
@@ -101,7 +101,7 @@
         </div>
     </div>
 
-    <!-- Tabel (sama seperti sebelumnya) -->
+    <!-- Tabel -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-transparent border-0 pt-3">
             <h5 class="fw-semibold mb-0"><i class="fas fa-history me-2 text-primary"></i>Daftar Peminjaman Selesai</h5>

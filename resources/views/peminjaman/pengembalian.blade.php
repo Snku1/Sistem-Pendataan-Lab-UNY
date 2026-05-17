@@ -36,9 +36,16 @@
             <form action="{{ route('peminjaman.proses-pengembalian', $peminjaman->id_peminjaman) }}" method="POST" id="formPengembalian">
                 @csrf
                 @method('PUT')
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Tanggal Pengembalian <span class="text-danger">*</span></label>
-                    <input type="date" name="tanggal_kembali" class="form-control @error('tanggal_kembali') is-invalid @enderror" value="{{ date('Y-m-d') }}" required>
+                
+                <!-- Tanggal Pengembalian dengan lebar diperkecil -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Tanggal Pengembalian <span class="text-danger">*</span></label>
+                        <input type="date" name="tanggal_kembali" class="form-control @error('tanggal_kembali') is-invalid @enderror" value="{{ date('Y-m-d') }}" required>
+                        @error('tanggal_kembali')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
 
                 <h5 class="fw-semibold mt-4 mb-3">Daftar Barang yang Dipinjam</h5>
@@ -164,14 +171,7 @@
 
         btnKonfirmasi.addEventListener('click', function(e) {
             e.preventDefault();
-            // Hapus hidden inputs yang tidak terisi
-            document.querySelectorAll('input.hidden-id').forEach(input => {
-                if (input.value === '') input.remove();
-            });
-            document.querySelectorAll('input.hidden-kondisi').forEach(input => {
-                if (input.value === '') input.remove();
-            });
-            document.querySelectorAll('input.hidden-catatan').forEach(input => {
+            document.querySelectorAll('input.hidden-id, input.hidden-kondisi, input.hidden-catatan').forEach(input => {
                 if (input.value === '') input.remove();
             });
             form.submit();

@@ -84,15 +84,12 @@
     <!-- Filter Bar -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-3">
-            <form action="{{ route('barang.index') }}" method="GET" class="row g-3">
-                <div class="col-md-2 col-sm-6">
-                    <label class="form-label small fw-semibold">KATEGORI</label>
-                    <select name="kategori" class="form-select form-select-sm rounded-pill">
-                        <option value="">Semua Kategori</option>
-                        @foreach($kategoriList as $kat)
-                            <option value="{{ $kat }}" {{ request('kategori') == $kat ? 'selected' : '' }}>{{ $kat }}</option>
-                        @endforeach
-                    </select>
+            <form action="{{ route('barang.index') }}" method="GET" class="row g-3 align-items-end">
+                <!-- Cari Barang (pengganti filter kategori) -->
+                <div class="col-md-5 col-sm-6">
+                    <label class="form-label small fw-semibold">CARI BARANG</label>
+                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" 
+                           placeholder="Nama, merk, kode, atau deskripsi..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2 col-sm-6">
                     <label class="form-label small fw-semibold">MERK ALAT</label>
@@ -112,33 +109,19 @@
                         <option value="hilang" {{ request('kondisi') == 'hilang' ? 'selected' : '' }}>Hilang</option>
                     </select>
                 </div>
-                <div class="col-md-2 col-sm-6">
-                    <label class="form-label small fw-semibold">SEMESTER</label>
-                    <select name="semester" class="form-select form-select-sm rounded-pill">
-                        <option value="">Semua Semester</option>
-                        <option value="Ganjil" {{ request('semester') == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
-                        <option value="Genap" {{ request('semester') == 'Genap' ? 'selected' : '' }}>Genap</option>
-                    </select>
-                </div>
-                <div class="col-md-2 col-sm-6">
-                    <label class="form-label small fw-semibold">TAHUN AJARAN</label>
-                    <select name="tahun_ajaran" class="form-select form-select-sm rounded-pill">
-                        <option value="">Semua Tahun</option>
-                        @foreach($tahunAjaranList ?? [] as $tahun)
-                            <option value="{{ $tahun }}" {{ request('tahun_ajaran') == $tahun ? 'selected' : '' }}>{{ $tahun }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2 col-sm-6 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary rounded-pill w-100">
+                <div class="col-md-3 col-sm-6 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
                         <i class="fas fa-filter me-1"></i> Filter
                     </button>
+                    <a href="{{ route('barang.index') }}" class="btn btn-outline-secondary rounded-pill">
+                        <i class="fas fa-undo-alt me-1"></i> Reset
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Tabel Inventaris -->
+    <!-- Tabel Inventaris (kolom Semester dihapus) -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header bg-transparent border-0 pt-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -163,8 +146,6 @@
                             <th class="text-danger">Hilang</th>
                             <th>Total</th>
                             <th>Lokasi</th>
-                            <th>Semester</th>
-                            <th>Tahun Ajaran</th>
                             <th>Kapasitas Alat</th>
                             <th>Keterangan</th>
                             <th>Penanggungjawab</th>
@@ -182,8 +163,6 @@
                             <td>{{ $item->jumlah_hilang ?? 0 }}</td>
                             <td>{{ $item->stok }}</td>
                             <td>{{ $item->lokasi->nama_lokasi ?? '-' }}</td>
-                            <td>{{ $item->semester ?? '-' }}</td>
-                            <td>{{ $item->tahun_ajaran ?? '-' }}</td>
                             <td>
                                 @php
                                     $kapasitasAngka = preg_replace('/[^0-9]/', '', $item->kapasitas);
@@ -211,7 +190,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="14" class="text-center py-3 text-muted">Belum ada data barang</td>
+                            <td colspan="12" class="text-center py-3 text-muted">Belum ada data barang</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -230,7 +209,7 @@
         </div>
     </div>
 
-    <!-- Pengumuman Inventaris -->
+    <!-- Pengumuman Inventaris (tetap) -->
     <div class="card border-0 shadow-sm rounded-4 mb-4 bg-info bg-opacity-10">
         <div class="card-body p-3">
             <div class="d-flex align-items-center">

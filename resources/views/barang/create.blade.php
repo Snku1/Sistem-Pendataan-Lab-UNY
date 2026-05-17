@@ -34,6 +34,7 @@
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
                     <!-- Nama Barang -->
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Nama Barang <span class="text-danger">*</span></label>
@@ -74,7 +75,7 @@
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Jumlah Baik <span class="text-danger">*</span></label>
                         <input type="number" name="jumlah_baik" id="jumlah_baik" class="form-control form-control-sm rounded-pill @error('jumlah_baik') is-invalid @enderror"
-                            value="{{ old('jumlah_baik') }}" min="0" required>
+                            value="{{ old('jumlah_baik', 0) }}" min="0" required>
                         @error('jumlah_baik')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -83,7 +84,7 @@
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Jumlah Rusak</label>
                         <input type="number" name="jumlah_rusak" id="jumlah_rusak" class="form-control form-control-sm rounded-pill @error('jumlah_rusak') is-invalid @enderror"
-                            value="{{ old('jumlah_rusak') }}" min="0">
+                            value="{{ old('jumlah_rusak', 0) }}" min="0">
                         @error('jumlah_rusak')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -92,7 +93,7 @@
                     <div class="col-md-4">
                         <label class="form-label small fw-semibold">Jumlah Hilang</label>
                         <input type="number" name="jumlah_hilang" id="jumlah_hilang" class="form-control form-control-sm rounded-pill @error('jumlah_hilang') is-invalid @enderror"
-                            value="{{ old('jumlah_hilang') }}" min="0">
+                            value="{{ old('jumlah_hilang', 0) }}" min="0">
                         @error('jumlah_hilang')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -102,29 +103,6 @@
                     <div class="col-md-3">
                         <label class="form-label small fw-semibold">Total Stok (Otomatis)</label>
                         <input type="number" id="total_stok" class="form-control form-control-sm rounded-pill" readonly>
-                    </div>
-
-                    <!-- Semester -->
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Semester</label>
-                        <select name="semester" class="form-select form-select-sm rounded-pill @error('semester') is-invalid @enderror">
-                            <option value="">Pilih Semester</option>
-                            <option value="Ganjil" {{ old('semester') == 'Ganjil' ? 'selected' : '' }}>Ganjil</option>
-                            <option value="Genap" {{ old('semester') == 'Genap' ? 'selected' : '' }}>Genap</option>
-                        </select>
-                        @error('semester')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <!-- Tahun Ajaran -->
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Tahun Ajaran</label>
-                        <input type="text" name="tahun_ajaran" class="form-control form-control-sm rounded-pill @error('tahun_ajaran') is-invalid @enderror"
-                            value="{{ old('tahun_ajaran') }}" placeholder="Contoh: 2024/2025">
-                        @error('tahun_ajaran')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
                     </div>
 
                     <!-- Kapasitas -->
@@ -195,7 +173,7 @@
                 <i class="fas fa-info-circle text-info fs-3 me-3"></i>
                 <div>
                     <h6 class="fw-bold mb-1">Informasi</h6>
-                    <p class="mb-0 small text-muted">Total stok akan dihitung otomatis dari jumlah baik + rusak + hilang. Pastikan data sesuai. Kode barang akan digenerate otomatis jika dikosongkan.</p>
+                    <p class="mb-0 small text-muted">Total stok akan dihitung otomatis dari jumlah baik + rusak + hilang. Kode barang digenerate otomatis.</p>
                 </div>
             </div>
         </div>
@@ -211,8 +189,8 @@
     function hitungTotal() {
         let baik = parseInt(document.getElementById('jumlah_baik').value) || 0;
         let rusak = parseInt(document.getElementById('jumlah_rusak').value) || 0;
-        // Jumlah hilang tidak dimasukkan ke total stok
-        document.getElementById('total_stok').value = baik + rusak;
+        let hilang = parseInt(document.getElementById('jumlah_hilang').value) || 0;
+        document.getElementById('total_stok').value = baik + rusak + hilang;
     }
     document.getElementById('jumlah_baik').addEventListener('input', hitungTotal);
     document.getElementById('jumlah_rusak').addEventListener('input', hitungTotal);

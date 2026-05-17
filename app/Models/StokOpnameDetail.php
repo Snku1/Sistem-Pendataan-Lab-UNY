@@ -13,7 +13,14 @@ class StokOpnameDetail extends Model
     protected $primaryKey = 'id_detail';
 
     protected $fillable = [
-        'id_opname', 'id_barang', 'stok_sistem', 'stok_fisik', 'selisih', 'catatan'
+        'id_opname', 
+        'id_barang', 
+        'stok_sistem', 
+        'stok_fisik', 
+        'selisih', 
+        'keterangan',
+        'catatan',
+        'id_semester'   // tambah
     ];
 
     public function opname()
@@ -24,5 +31,10 @@ class StokOpnameDetail extends Model
     public function barang()
     {
         return $this->belongsTo(Barang::class, 'id_barang');
+    }
+
+    public function semester()
+    {
+        return $this->belongsTo(Semester::class, 'id_semester');
     }
 }

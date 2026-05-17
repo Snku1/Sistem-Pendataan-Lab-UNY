@@ -4,14 +4,52 @@
 
 @section('content')
 <div class="container-fluid px-0">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Header dengan informasi semester aktif -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <div>
             <h2 class="fw-bold text-dark mb-1">Manajemen Stok</h2>
-            <p class="text-muted">Periode: {{ \Carbon\Carbon::parse($tanggalAwal)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($tanggalAkhir)->format('d/m/Y') }}</p>
+            <p class="text-muted mb-0">
+                Data pergerakan stok berdasarkan periode yang dipilih
+            </p>
+        </div>
+        <div>
+            @php
+                $activeSemesterId = session('active_semester_id');
+                $semesterLabel = 'Semua Semester';
+                if ($activeSemesterId && $activeSemesterId != 0) {
+                    $semester = App\Models\Semester::find($activeSemesterId);
+                    if ($semester) {
+                        $semesterLabel = $semester->nama_semester . ' - ' . $semester->tahun_ajaran;
+                    }
+                } elseif ($activeSemesterId == 0) {
+                    $semesterLabel = 'Semua Semester';
+                }
+            @endphp
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                <i class="fas fa-calendar-alt me-1"></i> {{ $semesterLabel }}
+            </span>
         </div>
     </div>
 
-    <!-- Card Statistik (tetap) -->
+    <!-- Info periode yang sedang ditampilkan -->
+    <div class="alert alert-light border rounded-4 shadow-sm mb-4 py-2 px-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <i class="fas fa-chart-line text-primary me-2"></i>
+                <strong>Periode laporan:</strong> 
+                {{ \Carbon\Carbon::parse($tanggalAwal)->translatedFormat('d F Y') }} s.d. 
+                {{ \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d F Y') }}
+            </div>
+            @if($activeSemesterId && $activeSemesterId != 0)
+                <div class="text-muted small">
+                    <i class="fas fa-info-circle me-1"></i> 
+                    Rentang tanggal mengikuti semester aktif (bisa diubah manual di bawah)
+                </div>
+            @endif
+        </div>
+    </div>
+
+    <!-- Card Statistik -->
     <div class="row g-3 mb-4">
         <div class="col-md-2 col-sm-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
@@ -30,7 +68,7 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Stok Masuk Bulan Ini</p>
+                        <p class="text-muted mb-1 small">Stok Masuk Periode</p>
                         <h3 class="fw-bold text-success mb-0">{{ number_format($totalStokMasuk) }}</h3>
                     </div>
                     <div class="rounded-circle bg-success bg-opacity-10 p-3">
@@ -43,7 +81,7 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <p class="text-muted mb-1 small">Stok Keluar Bulan Ini</p>
+                        <p class="text-muted mb-1 small">Stok Keluar Periode</p>
                         <h3 class="fw-bold text-warning mb-0">{{ number_format($totalStokKeluar) }}</h3>
                     </div>
                     <div class="rounded-circle bg-warning bg-opacity-10 p-3">
@@ -80,13 +118,24 @@
         </div>
     </div>
 
-    <!-- Filter: Hanya pencarian (tanggal disembunyikan) -->
+    <!-- Filter: Pencarian + Rentang Tanggal -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body">
             <form method="GET" class="row g-3 align-items-end">
-                <div class="col-md-8">
+                <div class="col-md-4">
                     <label class="form-label small fw-semibold">Cari Barang</label>
-                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" value="{{ request('search') }}" placeholder="Cari kode atau nama barang...">
+                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" 
+                           value="{{ request('search') }}" placeholder="Kode atau nama barang...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Awal</label>
+                    <input type="date" name="tanggal_awal" class="form-control form-control-sm rounded-pill" 
+                           value="{{ $tanggalAwal }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Tanggal Akhir</label>
+                    <input type="date" name="tanggal_akhir" class="form-control form-control-sm rounded-pill" 
+                           value="{{ $tanggalAkhir }}">
                 </div>
                 <div class="col-md-4 d-flex gap-2">
                     <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
@@ -97,10 +146,14 @@
                     </a>
                 </div>
             </form>
+            <small class="text-muted mt-2 d-block">
+                <i class="fas fa-info-circle me-1"></i> 
+                Data stok masuk dan keluar dihitung berdasarkan rentang tanggal di atas. Stok awal dihitung secara otomatis dari data sebelum tanggal awal.
+            </small>
         </div>
     </div>
 
-    <!-- Tabel Rekap Stok (sama) -->
+    <!-- Tabel Rekap Stok -->
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-transparent border-0 pt-3">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -133,7 +186,9 @@
                             <td class="text-end">{{ number_format($item->stok_awal) }}</td>
                             <td class="text-end">{{ number_format($item->stok_masuk) }}</td>
                             <td class="text-end">{{ number_format($item->stok_keluar) }}</td>
-                            <td class="pe-2 text-end fw-bold {{ $item->stok_akhir <= 2 ? 'text-danger' : '' }}">{{ number_format($item->stok_akhir) }}</td>
+                            <td class="pe-2 text-end fw-bold {{ $item->stok_akhir <= 2 ? 'text-danger' : '' }}">
+                                {{ number_format($item->stok_akhir) }}
+                            </td>
                         </tr>
                         @empty
                         <tr>

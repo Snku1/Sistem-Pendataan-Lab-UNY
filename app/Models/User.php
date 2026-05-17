@@ -43,4 +43,21 @@ class User extends Authenticatable
     {
         return $this->hasMany(LogAktivitas::class, 'id_user');
     }
+
+    // Relasi ke peminjaman (jika foreign key di tabel peminjaman adalah 'id_user')
+    public function peminjaman()
+    {
+        return $this->hasMany(Peminjaman::class, 'id_user');
+    }
+
+    // Helper method untuk pengecekan role (mempermudah di blade/controller)
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isPetugas()
+    {
+        return $this->role === 'petugas';
+    }
 }

@@ -9,14 +9,14 @@ return new class extends Migration
     public function up()
     {
         Schema::table('peminjaman', function (Blueprint $table) {
-            $table->date('tanggal_jatuh_tempo')->nullable()->after('tanggal_penggunaan');
+            $table->date('last_overdue_reminder_date')->nullable()->after('status_transaksi');
         });
     }
 
     public function down()
     {
         Schema::table('peminjaman', function (Blueprint $table) {
-            $table->dropColumn('tanggal_jatuh_tempo');
+            $table->dropColumn('last_overdue_reminder_date');
         });
     }
 };
