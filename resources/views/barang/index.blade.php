@@ -208,23 +208,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Pengumuman Inventaris (tetap) -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-info bg-opacity-10">
-        <div class="card-body p-3">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-bullhorn text-info fs-3 me-3"></i>
-                <div>
-                    <h6 class="fw-bold mb-1">Pengumuman Inventaris</h6>
-                    <p class="mb-0 small text-muted">Stock opname semester genap akan dilaksanakan pada tanggal 15 - 20 Juni 2024. Harap lengkapi data barang dan kondisi terkini sebelum batas waktu.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="text-center py-3 border-top">
-        <small class="text-muted">© 2024 Sistem Informasi Laboratorium Terintegrasi (SILABT). Hak Cipta Dilindungi.</small>
-    </div>
-</div>
+    
 @endsection
