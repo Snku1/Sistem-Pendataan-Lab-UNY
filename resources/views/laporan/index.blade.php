@@ -173,7 +173,8 @@
             </h5>
             <div>
                 <a href="{{ route('laporan.export-pdf', $jenis) . '?' . http_build_query(request()->except('page')) }}" class="btn btn-sm btn-danger rounded-pill me-2"><i class="fas fa-file-pdf"></i> PDF</a>
-                <a href="{{ route('laporan.export-csv', $jenis) . '?' . http_build_query(request()->except('page')) }}" class="btn btn-sm btn-success rounded-pill"><i class="fas fa-file-csv"></i> CSV</a>
+                <a href="{{ route('laporan.export-csv', $jenis) . '?' . http_build_query(request()->except('page')) }}" class="btn btn-sm btn-success rounded-pill me-2"><i class="fas fa-file-csv"></i> CSV</a>
+                <a href="{{ route('laporan.export-excel', $jenis) . '?' . http_build_query(request()->except('page')) }}" class="btn btn-sm btn-primary rounded-pill"><i class="fas fa-file-excel"></i> Excel</a>
             </div>
         </div>
         <div class="card-body p-0">

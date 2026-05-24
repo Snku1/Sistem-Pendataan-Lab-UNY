@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule; // <-- Tambahkan ini
 
 class BarangController extends Controller
 {
@@ -35,19 +36,16 @@ class BarangController extends Controller
     public function index(Request $request)
     {
         $activeSemesterId = $this->getActiveSemesterId();
-        // Jika belum ada pilihan semester, arahkan ke halaman pilih semester
         if ($activeSemesterId === null) {
             return redirect()->route('semester.daftar')->with('warning', 'Silakan pilih semester terlebih dahulu.');
         }
 
         $query = Barang::with(['lokasi', 'penanggungJawab', 'semester']);
 
-        // Filter berdasarkan semester jika bukan "Semua Semester"
         if ($activeSemesterId != 0) {
             $query->where('id_semester', $activeSemesterId);
         }
 
-        // Filter tambahan
         if ($request->filled('merk')) {
             $query->where('merk', $request->merk);
         }
@@ -76,13 +74,11 @@ class BarangController extends Controller
 
         $barang = $query->orderBy('created_at', 'desc')->paginate(10);
 
-        // Statistik berdasarkan filter yang sama (gunakan clone query)
         $totalBarang = (clone $query)->sum('stok');
         $barangBaik = (clone $query)->sum('jumlah_baik');
         $barangRusak = (clone $query)->sum('jumlah_rusak');
         $barangHilang = (clone $query)->sum('jumlah_hilang');
 
-        // Daftar merk yang tersedia (sesuai filter semester)
         $merkQuery = Barang::query();
         if ($activeSemesterId != 0) {
             $merkQuery->where('id_semester', $activeSemesterId);
@@ -107,7 +103,6 @@ class BarangController extends Controller
     public function create()
     {
         $activeSemesterId = $this->getActiveSemesterId();
-        // Untuk menambah barang, harus memilih semester tertentu (bukan "Semua Semester")
         if (!$activeSemesterId || $activeSemesterId == 0) {
             return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu (bukan "Semua Semester") untuk menambah barang.');
         }
@@ -125,8 +120,17 @@ class BarangController extends Controller
             return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu untuk menyimpan barang.');
         }
 
+        // Validasi dengan unique per id_lab dan id_semester
         $request->validate([
-            'kode_barang' => 'nullable|string|max:255|unique:barang,kode_barang',
+            'kode_barang' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('barang')->where(function ($query) use ($activeSemesterId) {
+                    return $query->where('id_lab', Auth::user()->id_lab)
+                                 ->where('id_semester', $activeSemesterId);
+                }),
+            ],
             'nama_barang' => 'required|string|max:255',
             'merk' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -149,7 +153,7 @@ class BarangController extends Controller
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
             $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
             $data['id_semester'] = $activeSemesterId;
-            $data['id_lab'] = Auth::user()->id_lab;  // <---- TAMBAHKAN INI
+            $data['id_lab'] = Auth::user()->id_lab;
 
             $barang = Barang::create($data);
             if ($request->has('penanggung_jawab')) {
@@ -206,8 +210,17 @@ class BarangController extends Controller
             return redirect()->route('barang.index')->with('error', 'Anda tidak dapat mengedit barang dari semester lain.');
         }
 
+        // Validasi update dengan unique per id_lab dan id_semester, mengabaikan barang yang sedang diedit
         $validator = validator($request->all(), [
-            'kode_barang' => 'required|string|max:255|unique:barang,kode_barang,' . $id . ',id_barang',
+            'kode_barang' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('barang')->ignore($id, 'id_barang')->where(function ($query) use ($barang) {
+                    return $query->where('id_lab', $barang->id_lab)
+                                 ->where('id_semester', $barang->id_semester);
+                }),
+            ],
             'nama_barang' => 'required|string|max:255',
             'merk' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string',
@@ -244,7 +257,7 @@ class BarangController extends Controller
             return redirect()->route('barang.index')->with('success', 'Barang berhasil diupdate.');
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Update error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Update error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage())->withInput();
         }
     }
@@ -283,7 +296,7 @@ class BarangController extends Controller
         }
     }
 
-    // Metode untuk kondisi awal barang masuk (jika diperlukan)
+    // Metode untuk kondisi awal barang masuk
     public function editKondisiAwal($id)
     {
         $barangMasuk = BarangMasuk::findOrFail($id);

@@ -138,6 +138,7 @@ Route::middleware(['auth', 'role:koorlap,teknisi', 'check.semester'])->group(fun
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::get('/export-pdf/{jenis}', [LaporanController::class, 'exportPdf'])->name('export-pdf');
         Route::get('/export-csv/{jenis}', [LaporanController::class, 'exportCsv'])->name('export-csv');
+        Route::get('/export-excel/{jenis}', [LaporanController::class, 'exportExcel'])->name('export-excel'); // <-- TAMBAHKAN INI
     });
 
     // ==================== PENGATURAN SISTEM PER LAB (KOORLAP/TEKNISI) ====================
