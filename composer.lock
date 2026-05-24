@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "860e1a0d9e25e6a3c3880c80a000f44b",
+    "content-hash": "5deae0a8ced8688f18ca58506c586a29",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -6533,6 +6533,70 @@
                 }
             ],
             "time": "2024-11-21T01:49:47+00:00"
+        },
+        {
+            "name": "weijukeji/laravel-xlswriter",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/WeiJuKeJi/laravel-xlswriter.git",
+                "reference": "04a6227554764fcb5378363399ca3f1c58ff6888"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/WeiJuKeJi/laravel-xlswriter/zipball/04a6227554764fcb5378363399ca3f1c58ff6888",
+                "reference": "04a6227554764fcb5378363399ca3f1c58ff6888",
+                "shasum": ""
+            },
+            "require": {
+                "ext-xlswriter": "*",
+                "illuminate/contracts": "^12.0|^13.0",
+                "illuminate/filesystem": "^12.0|^13.0",
+                "illuminate/queue": "^12.0|^13.0",
+                "illuminate/support": "^12.0|^13.0",
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^4.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "WeiJuKeJi\\LaravelXlswriter\\LaravelXlswriterServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "WeiJuKeJi\\LaravelXlswriter\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "WeiJuKeJi",
+                    "email": "urlinee@gmail.com"
+                }
+            ],
+            "description": "Laravel integration for the xlswriter PHP extension, with reusable Excel import and export workflows.",
+            "keywords": [
+                "excel",
+                "export",
+                "import",
+                "laravel",
+                "xlswriter",
+                "xlsx"
+            ],
+            "support": {
+                "issues": "https://github.com/WeiJuKeJi/laravel-xlswriter/issues",
+                "source": "https://github.com/WeiJuKeJi/laravel-xlswriter/tree/v1.0.0"
+            },
+            "time": "2026-05-08T16:06:25+00:00"
         }
     ],
     "packages-dev": [
@@ -8723,7 +8787,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,

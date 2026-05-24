@@ -18,21 +18,28 @@ class LaporanController extends Controller
         $jenis = $request->get('jenis', 'barang');
 
         $semesterList = Semester::orderBy('tahun_ajaran', 'desc')->orderBy('nama_semester', 'desc')->get();
-        $lokasiList   = Lokasi::orderBy('nama_lokasi')->get();
+        $lokasiList = Lokasi::orderBy('nama_lokasi')->get();
 
-        $tanggalAwal  = $request->get('tanggal_awal', date('Y-m-01'));
+        $tanggalAwal = $request->get('tanggal_awal', date('Y-m-01'));
         $tanggalAkhir = $request->get('tanggal_akhir', date('Y-m-t'));
-        $semesterId   = $request->get('id_semester');
-        $lokasiId     = $request->get('id_lokasi');
-        $status       = $request->get('status');
+        $semesterId = $request->get('id_semester');
+        $lokasiId = $request->get('id_lokasi');
+        $status = $request->get('status');
 
         $previewData = $this->getPreviewData($jenis, $tanggalAwal, $tanggalAkhir, $semesterId, $lokasiId, $status);
         $stats = $this->getStatistics($jenis, $tanggalAwal, $tanggalAkhir, $semesterId, $lokasiId);
 
         return view('laporan.index', compact(
-            'jenis', 'semesterList', 'lokasiList',
-            'tanggalAwal', 'tanggalAkhir', 'semesterId', 'lokasiId', 'status',
-            'previewData', 'stats'
+            'jenis',
+            'semesterList',
+            'lokasiList',
+            'tanggalAwal',
+            'tanggalAkhir',
+            'semesterId',
+            'lokasiId',
+            'status',
+            'previewData',
+            'stats'
         ));
     }
 
@@ -58,7 +65,8 @@ class LaporanController extends Controller
                 ];
             case 'barang-masuk':
                 $query = BarangMasuk::whereBetween('tanggal_masuk', [$tglAwal, $tglAkhir]);
-                if ($semesterId) $query->where('id_semester', $semesterId);
+                if ($semesterId)
+                    $query->where('id_semester', $semesterId);
                 return [
                     'totalTransaksi' => $query->count(),
                     'totalJumlah' => $query->sum('jumlah_masuk'),
@@ -67,7 +75,8 @@ class LaporanController extends Controller
                 ];
             case 'riwayat-peminjaman':
                 $query = Peminjaman::where('status_transaksi', 'selesai');
-                if ($semesterId) $query->where('id_semester', $semesterId);
+                if ($semesterId)
+                    $query->where('id_semester', $semesterId);
                 $totalUnit = PeminjamanDetail::whereHas('peminjaman', fn($q) => $q->where('status_transaksi', 'selesai'))
                     ->when($semesterId, fn($q) => $q->whereHas('peminjaman', fn($sq) => $sq->where('id_semester', $semesterId)))
                     ->sum('jumlah');
@@ -88,10 +97,10 @@ class LaporanController extends Controller
             case 'manajemen-stok':
                 $data = $this->getStockMovementData($tglAwal, $tglAkhir, $semesterId, $lokasiId);
                 return [
-                    'totalBarang'   => $data->count(),
-                    'totalStok'     => $data->sum('stok_akhir'),
-                    'stokMenipis'   => $data->where('stok_akhir', '>', 0)->where('stok_akhir', '<=', 2)->count(),
-                    'stokHabis'     => $data->where('stok_akhir', 0)->count(),
+                    'totalBarang' => $data->count(),
+                    'totalStok' => $data->sum('stok_akhir'),
+                    'stokMenipis' => $data->where('stok_akhir', '>', 0)->where('stok_akhir', '<=', 2)->count(),
+                    'stokHabis' => $data->where('stok_akhir', 0)->count(),
                 ];
             default:
                 return [];
@@ -103,21 +112,26 @@ class LaporanController extends Controller
         switch ($jenis) {
             case 'barang':
                 $query = Barang::with(['lokasi', 'semester']);
-                if ($semesterId) $query->where('id_semester', $semesterId);
-                if ($lokasiId)   $query->where('id_lokasi', $lokasiId);
+                if ($semesterId)
+                    $query->where('id_semester', $semesterId);
+                if ($lokasiId)
+                    $query->where('id_lokasi', $lokasiId);
                 return $query->orderBy('created_at', 'desc');
             case 'barang-masuk':
                 $query = BarangMasuk::with(['barang', 'user', 'penanggungJawab', 'semester'])
                     ->whereBetween('tanggal_masuk', [$tglAwal, $tglAkhir]);
-                if ($semesterId) $query->where('id_semester', $semesterId);
-                if ($status)     $query->where('status', $status);
+                if ($semesterId)
+                    $query->where('id_semester', $semesterId);
+                if ($status)
+                    $query->where('status', $status);
                 return $query->orderBy('tanggal_masuk', 'desc');
             case 'riwayat-peminjaman':
                 $query = Peminjaman::with(['details.barang', 'user'])
                     ->where('status_transaksi', 'selesai');
-                if ($semesterId) $query->where('id_semester', $semesterId);
+                if ($semesterId)
+                    $query->where('id_semester', $semesterId);
                 if ($tglAwal && $tglAkhir) {
-                    $query->whereHas('details', function($q) use ($tglAwal, $tglAkhir) {
+                    $query->whereHas('details', function ($q) use ($tglAwal, $tglAkhir) {
                         $q->whereBetween('tanggal_kembali_aktual', [$tglAwal, $tglAkhir]);
                     });
                 }
@@ -159,7 +173,8 @@ class LaporanController extends Controller
                 ->where('status_item', 'kembali')
                 ->whereHas('peminjaman', function ($q) use ($tglAwal, $tglAkhir, $semesterId) {
                     $q->whereBetween('tanggal_kembali_aktual', [$tglAwal, $tglAkhir]);
-                    if ($semesterId) $q->where('id_semester', $semesterId);
+                    if ($semesterId)
+                        $q->where('id_semester', $semesterId);
                 })
                 ->sum('jumlah');
 
@@ -167,11 +182,11 @@ class LaporanController extends Controller
 
             $rekap[] = (object) [
                 'nama_barang' => $barang->nama_barang,
-                'merk'        => $barang->merk ?? '-',
-                'stok_awal'   => $stokAwal,
-                'stok_masuk'  => $stokMasuk,
+                'merk' => $barang->merk ?? '-',
+                'stok_awal' => $stokAwal,
+                'stok_masuk' => $stokMasuk,
                 'stok_keluar' => $stokKeluar,
-                'stok_akhir'  => $stokAkhir,
+                'stok_akhir' => $stokAkhir,
             ];
         }
         return collect($rekap);
@@ -197,7 +212,8 @@ class LaporanController extends Controller
             ->where('status_item', 'kembali')
             ->whereHas('peminjaman', function ($q) use ($tanggalAwal, $semesterId) {
                 $q->where('tanggal_kembali_aktual', '>=', $tanggalAwal);
-                if ($semesterId) $q->where('id_semester', $semesterId);
+                if ($semesterId)
+                    $q->where('id_semester', $semesterId);
             })
             ->sum('jumlah');
 
@@ -218,80 +234,137 @@ class LaporanController extends Controller
     {
         $data = $this->getFullData($jenis, $request);
         $filename = 'laporan_' . $jenis . '_' . date('YmdHis') . '.csv';
-        
+
         $headers = $this->getCsvHeaders($jenis);
-        
-        $callback = function() use ($data, $jenis, $headers) {
+
+        $callback = function () use ($data, $jenis, $headers) {
             $handle = fopen('php://output', 'w');
             fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM
             fputcsv($handle, $headers);
-            
+
             foreach ($data as $item) {
                 fputcsv($handle, $this->mapToCsvRow($jenis, $item));
             }
             fclose($handle);
         };
-        
+
         return response()->stream($callback, 200, [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
-    
+
+    // ========== EKSPOR EXCEL (xlswriter) ==========
+    /**
+     * Ekspor laporan ke file Excel (.xlsx) menggunakan ekstensi xlswriter
+     */
+    public function exportExcel($jenis, Request $request)
+    {
+        $data = $this->getFullData($jenis, $request);
+        $headers = $this->getCsvHeaders($jenis);
+
+        $rows = [];
+        foreach ($data as $item) {
+            $rows[] = $this->mapToCsvRow($jenis, $item);
+        }
+
+        $filename = 'laporan_' . $jenis . '_' . date('YmdHis') . '.xlsx';
+
+        // Tentukan folder sementara (bisa di storage/app/temp)
+        $tempDir = storage_path('app/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        // Gunakan class asli dari ekstensi xlswriter
+        $excel = new \Vtiful\Kernel\Excel(['path' => $tempDir]);
+        $excel->fileName($filename, 'Sheet1');
+        $excel->header($headers);
+        $excel->data($rows);
+        $excel->output();
+
+        $filePath = $tempDir . '/' . $filename;
+        return response()->download($filePath)->deleteFileAfterSend(true);
+    }
+
     private function getCsvHeaders($jenis)
     {
         switch ($jenis) {
-            case 'barang': return ['Kode', 'Nama Barang', 'Merk', 'Stok', 'Baik', 'Rusak', 'Hilang', 'Lokasi', 'Semester', 'Keterangan'];
-            case 'barang-masuk': return ['Tanggal', 'Nama Barang', 'Jumlah', 'Sumber', 'Pemeriksa', 'Status', 'Catatan', 'Bukti Foto'];
-            case 'riwayat-peminjaman': return ['Kode Transaksi', 'Peminjam', 'Tanggal Pinjam', 'Tanggal Kembali', 'Total Barang', 'Rusak', 'Hilang', 'Catatan'];
-            case 'manajemen-stok': return ['Nama Barang', 'Merk', 'Stok Awal', 'Stok Masuk', 'Stok Keluar', 'Stok Akhir'];
-            default: return [];
+            case 'barang':
+                return ['Kode', 'Nama Barang', 'Merk', 'Stok', 'Baik', 'Rusak', 'Hilang', 'Lokasi', 'Semester', 'Keterangan'];
+            case 'barang-masuk':
+                return ['Tanggal', 'Nama Barang', 'Jumlah', 'Sumber', 'Pemeriksa', 'Status', 'Catatan', 'Bukti Foto'];
+            case 'riwayat-peminjaman':
+                return ['Kode Transaksi', 'Peminjam', 'Tanggal Pinjam', 'Tanggal Kembali', 'Total Barang', 'Rusak', 'Hilang', 'Catatan'];
+            case 'manajemen-stok':
+                return ['Nama Barang', 'Merk', 'Stok Awal', 'Stok Masuk', 'Stok Keluar', 'Stok Akhir'];
+            default:
+                return [];
         }
     }
-    
+
     private function mapToCsvRow($jenis, $item)
     {
         switch ($jenis) {
             case 'barang':
                 return [
-                    $item->kode_barang, $item->nama_barang, $item->merk ?? '-', $item->stok,
-                    $item->jumlah_baik, $item->jumlah_rusak, $item->jumlah_hilang,
+                    $item->kode_barang,
+                    $item->nama_barang,
+                    $item->merk ?? '-',
+                    $item->stok,
+                    $item->jumlah_baik,
+                    $item->jumlah_rusak,
+                    $item->jumlah_hilang,
                     $item->lokasi->nama_lokasi ?? '-',
-                    $item->semester ? $item->semester->nama_semester.' - '.$item->semester->tahun_ajaran : '-',
+                    $item->semester ? $item->semester->nama_semester . ' - ' . $item->semester->tahun_ajaran : '-',
                     $item->keterangan ?? '-'
                 ];
             case 'barang-masuk':
                 return [
-                    $item->tanggal_masuk, $item->barang->nama_barang ?? '-', $item->jumlah_masuk,
-                    $item->sumber ?? '-', $item->penanggungJawab->nama_pj ?? '-', $item->status,
-                    $item->catatan_pemeriksaan ?? '-', $item->bukti_foto ? 'Ada' : '-'
+                    $item->tanggal_masuk,
+                    $item->barang->nama_barang ?? '-',
+                    $item->jumlah_masuk,
+                    $item->sumber ?? '-',
+                    $item->penanggungJawab->nama_pj ?? '-',
+                    $item->status,
+                    $item->catatan_pemeriksaan ?? '-',
+                    $item->bukti_foto ? 'Ada' : '-'
                 ];
             case 'riwayat-peminjaman':
                 $tglKembali = $item->details->where('status_item', 'kembali')->max('tanggal_kembali_aktual');
                 $rusak = $item->details->where('kondisi_setelah', 'rusak')->sum('jumlah');
                 $hilang = $item->details->where('kondisi_setelah', 'hilang')->sum('jumlah');
                 return [
-                    $item->kode_transaksi, $item->nama_peminjam,
-                    $item->tanggal_penggunaan, $tglKembali ?? '-',
-                    $item->details->sum('jumlah'), $rusak, $hilang,
+                    $item->kode_transaksi,
+                    $item->nama_peminjam,
+                    $item->tanggal_penggunaan,
+                    $tglKembali ?? '-',
+                    $item->details->sum('jumlah'),
+                    $rusak,
+                    $hilang,
                     $item->catatan_awal ?? '-'
                 ];
             case 'manajemen-stok':
                 return [
-                    $item->nama_barang, $item->merk,
-                    $item->stok_awal, $item->stok_masuk, $item->stok_keluar, $item->stok_akhir
+                    $item->nama_barang,
+                    $item->merk,
+                    $item->stok_awal,
+                    $item->stok_masuk,
+                    $item->stok_keluar,
+                    $item->stok_akhir
                 ];
-            default: return [];
+            default:
+                return [];
         }
     }
 
     public function getFullData($jenis, Request $request)
     {
-        $tglAwal   = $request->get('tanggal_awal', date('Y-m-01'));
-        $tglAkhir  = $request->get('tanggal_akhir', date('Y-m-t'));
-        $semesterId= $request->get('id_semester');
-        $lokasiId  = $request->get('id_lokasi');
-        $status    = $request->get('status');
+        $tglAwal = $request->get('tanggal_awal', date('Y-m-01'));
+        $tglAkhir = $request->get('tanggal_akhir', date('Y-m-t'));
+        $semesterId = $request->get('id_semester');
+        $lokasiId = $request->get('id_lokasi');
+        $status = $request->get('status');
 
         if ($jenis == 'manajemen-stok') {
             return $this->getStockMovementData($tglAwal, $tglAkhir, $semesterId, $lokasiId);

@@ -23,7 +23,7 @@ class SettingController extends Controller
             'notification_enabled' => Setting::get('notification_enabled', '1', $labId),
             'notification_days_before' => Setting::get('notification_days_before', '2', $labId),
             'notification_sender_email' => Setting::get('notification_sender_email', 'noreply@labavtv.com', $labId),
-            'notification_sender_name' => Setting::get('notification_sender_name', 'Sistem Lab AV & TV', $labId),
+            'notification_sender_name' => Setting::get('notification_sender_name', 'Laboratorium UNY', $labId),
         ];
 
         return view('settings.index', compact('settings'));
