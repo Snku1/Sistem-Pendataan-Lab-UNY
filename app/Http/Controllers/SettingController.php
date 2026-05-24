@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 
 class SettingController extends Controller
 {
@@ -14,7 +15,7 @@ class SettingController extends Controller
     {
         $labId = auth()->user()->id_lab;
         $settings = [
-            'lab_name' => Setting::get('lab_name', 'Laboratorium AV & TV', $labId),
+            'lab_name' => Setting::get('lab_name', 'Laboratorium UNY', $labId),
             'lab_address' => Setting::get('lab_address', '', $labId),
             'lab_phone' => Setting::get('lab_phone', '', $labId),
             'lab_email' => Setting::get('lab_email', '', $labId),
@@ -57,6 +58,9 @@ class SettingController extends Controller
             $path = $request->file('lab_logo')->store('logos', 'public');
             Setting::set('lab_logo', $path, $labId);
         }
+
+        // Hapus cache mail_from_name (global) karena nama lab global berubah
+        Cache::forget('mail_from_name');
 
         return redirect()->route('settings.index')->with('success', 'Informasi lab berhasil disimpan.');
     }
