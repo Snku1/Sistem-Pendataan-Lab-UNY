@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sistem Laboratorium TV AV</title>
+    <title>Sistem Laboratorium UNY</title>
     
     <style>
         * {
@@ -172,7 +172,7 @@
 </head>
 <body>
     <div class="login-box">
-        <h1>Sistem Laboratorium TV AV</h1>
+        <h1>Sistem Laboratorium UNY</h1>
 
         @if ($errors->any())
             <div class="error-message">

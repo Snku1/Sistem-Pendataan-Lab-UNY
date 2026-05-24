@@ -224,6 +224,7 @@ class PeminjamanController extends Controller
             $data['id_user'] = Auth::id();
             $data['status_transaksi'] = 'aktif';
             $data['id_semester'] = $activeSemesterId;
+            $data['id_lab'] = Auth::user()->id_lab;  // <---- TAMBAHKAN INI
 
             if ($request->hasFile('surat_peminjaman')) {
                 $data['surat_peminjaman'] = $request->file('surat_peminjaman')->store('surat_peminjaman', 'public');
@@ -240,6 +241,7 @@ class PeminjamanController extends Controller
                     'kondisi_awal' => 'baik',
                     'status_item' => 'dipinjam',
                     'id_semester' => $activeSemesterId,
+                    'id_lab' => Auth::user()->id_lab,  // <---- TAMBAHKAN (atau ambil dari $peminjaman->id_lab)
                 ]);
 
                 $barang->decrement('jumlah_baik', $item['jumlah']);

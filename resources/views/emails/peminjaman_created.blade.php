@@ -92,7 +92,7 @@
     <div class="container">
         <div class="header">
             <h1>✅ Konfirmasi Peminjaman</h1>
-            <p>{{ App\Models\Setting::get('lab_name', 'Laboratorium AV & TV') }}</p>
+            <p>{{ App\Models\Setting::get('lab_name', 'Laboratorium UNY') }}</p>
             <div class="lab-details">
                 {{ App\Models\Setting::get('lab_address', '') }}<br>
                 Telp. {{ App\Models\Setting::get('lab_phone', '') }}
@@ -144,7 +144,7 @@
         </div>
         <div class="footer">
             <p>Email ini dikirim secara otomatis oleh sistem. Mohon tidak membalas email ini.</p>
-            <p>&copy; {{ date('Y') }} {{ App\Models\Setting::get('lab_name', 'Laboratorium AV & TV') }} - Universitas Negeri Yogyakarta</p>
+            <p>&copy; {{ date('Y') }} {{ App\Models\Setting::get('lab_name', 'Laboratorium UNY') }} - Universitas Negeri Yogyakarta</p>
         </div>
     </div>
 </body>

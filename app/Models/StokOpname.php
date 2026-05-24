@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\StokOpnameDetail;
+use Illuminate\Support\Facades\Auth;
 
 class StokOpname extends Model
 {
@@ -19,8 +19,18 @@ class StokOpname extends Model
         'keterangan', 
         'status', 
         'id_user',
-        'id_semester'   // tambah
+        'id_semester',
+        'id_lab'
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
 
     public function user()
     {
@@ -35,6 +45,11 @@ class StokOpname extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class, 'id_semester');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 
     public static function generateKodeOpname()

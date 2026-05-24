@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class RiwayatStok extends Model
 {
@@ -17,8 +18,18 @@ class RiwayatStok extends Model
         'jenis_perubahan', 
         'alasan', 
         'id_user',
-        'id_semester'   // tambah
+        'id_semester',
+        'id_lab'
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
 
     public function barang()
     {
@@ -33,5 +44,10 @@ class RiwayatStok extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class, 'id_semester');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 }

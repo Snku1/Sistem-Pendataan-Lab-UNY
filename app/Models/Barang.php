@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Barang extends Model
 {
@@ -23,10 +24,20 @@ class Barang extends Model
         'jumlah_rusak',
         'jumlah_hilang',
         'keterangan',
-        'id_semester'  // tambah
+        'id_semester',
+        'id_lab'
     ];
 
-    // Relasi
+    // Global scope untuk filter lab
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
+
     public function lokasi()
     {
         return $this->belongsTo(Lokasi::class, 'id_lokasi');
@@ -55,5 +66,10 @@ class Barang extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class, 'id_semester');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 }

@@ -1,13 +1,13 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Administrator')
+@section('title', 'Edit Teknisi')
 
 @section('content')
 <div class="container-fluid px-0">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark mb-1">Edit Administrator</h2>
-            <p class="text-muted mb-0">Perbarui informasi akun administrator.</p>
+            <h2 class="fw-bold text-dark mb-1">Edit Teknisi</h2>
+            <p class="text-muted mb-0">Perbarui informasi akun teknisi.</p>
         </div>
         <div>
             <a href="{{ route('user.index') }}" class="btn btn-secondary rounded-pill">
@@ -45,9 +45,9 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Role</label>
-                        <input type="text" class="form-control rounded-pill" value="Administrator" disabled>
-                        <input type="hidden" name="role" value="admin">
-                        <small class="text-muted">Role tidak dapat diubah (Administrator).</small>
+                        <input type="text" class="form-control rounded-pill" value="Teknisi" disabled>
+                        <input type="hidden" name="role" value="teknisi">
+                        <small class="text-muted">Role tidak dapat diubah (Teknisi).</small>
                     </div>
                     <div class="col-12 mt-4">
                         <button type="submit" class="btn btn-primary rounded-pill px-4">

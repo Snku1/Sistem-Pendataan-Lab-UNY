@@ -150,6 +150,7 @@ class BarangMasukController extends Controller
                     'status' => $request->status,
                     'bukti_foto' => $fotoPath,
                     'id_user' => Auth::id(),
+                    'id_lab' => Auth::user()->id_lab,  // <---- TAMBAHKAN INI
                 ];
                 $barangMasuk = BarangMasuk::create($data);
 

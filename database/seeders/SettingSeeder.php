@@ -10,9 +10,9 @@ class SettingSeeder extends Seeder
     public function run()
     {
         // Informasi Laboratorium
-        Setting::set('lab_name', 'Laboratorium AV & TV');
-        Setting::set('lab_address', 'Gedung IDB Lantai 2, FT UNY');
-        Setting::set('lab_phone', '(0274) 123456');
+        Setting::set('lab_name', 'Laboratorium UNY');
+        Setting::set('lab_address', '');
+        Setting::set('lab_phone', '');
 
         // Pengaturan Notifikasi
         Setting::set('notification_enabled', '1');

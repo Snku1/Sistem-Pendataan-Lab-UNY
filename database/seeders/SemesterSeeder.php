@@ -13,7 +13,7 @@ class SemesterSeeder extends Seeder
         Semester::create([
             'nama_semester' => 'Ganjil',
             'tahun_ajaran' => '2024/2025',
-            'is_active' => true,
+            'is_active' => false,
             'tanggal_mulai' => '2024-07-01',
             'tanggal_selesai' => '2024-12-31'
         ]);
@@ -38,7 +38,7 @@ class SemesterSeeder extends Seeder
         Semester::create([
             'nama_semester' => 'Genap',
             'tahun_ajaran' => '2025/2026',
-            'is_active' => false,
+            'is_active' => true,
             'tanggal_mulai' => '2026-01-01',
             'tanggal_selesai' => '2026-06-30'
         ]);

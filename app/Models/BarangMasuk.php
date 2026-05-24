@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class BarangMasuk extends Model
 {
@@ -16,14 +17,15 @@ class BarangMasuk extends Model
         'id_barang',
         'jumlah_masuk',
         'tanggal_masuk',
-        'sumber',           // kolom semester dihapus
+        'sumber',
         'id_user',
         'status',
         'bukti_foto',
         'id_penanggung_jawab',
         'kondisi_penerimaan',
         'catatan_pemeriksaan',
-        'id_semester'       // tambah
+        'id_semester',
+        'id_lab'
     ];
 
     protected $casts = [
@@ -31,6 +33,15 @@ class BarangMasuk extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
 
     public function barang()
     {
@@ -47,9 +58,13 @@ class BarangMasuk extends Model
         return $this->belongsTo(PenanggungJawab::class, 'id_penanggung_jawab');
     }
 
-    // Relasi ke semester
     public function semester()
     {
         return $this->belongsTo(Semester::class, 'id_semester');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 }

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\PeminjamanDetail;
+use Illuminate\Support\Facades\Auth;
 
 class Peminjaman extends Model
 {
@@ -25,14 +25,24 @@ class Peminjaman extends Model
         'status_transaksi',
         'id_user',
         'id_semester',
-        'last_overdue_reminder_date',  // <-- Tambahan untuk pencatatan pengingat overdue
+        'last_overdue_reminder_date',
+        'id_lab'
     ];
 
     protected $casts = [
         'tanggal_penggunaan' => 'date',
         'tanggal_jatuh_tempo' => 'date',
-        'last_overdue_reminder_date' => 'date', // <-- Cast ke date
+        'last_overdue_reminder_date' => 'date',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
 
     public function user()
     {
@@ -47,6 +57,11 @@ class Peminjaman extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class, 'id_semester');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 
     public static function generateKodeTransaksi()

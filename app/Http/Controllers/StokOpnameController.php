@@ -107,6 +107,7 @@ class StokOpnameController extends Controller
             $data['id_user'] = Auth::id();
             $data['status'] = 'selesai';
             $data['id_semester'] = $activeSemesterId;
+            $data['id_lab'] = Auth::user()->id_lab;  // <---- TAMBAHKAN INI
 
             $opname = StokOpname::create($data);
 
@@ -133,6 +134,7 @@ class StokOpnameController extends Controller
                     'selisih'     => $selisih,
                     'keterangan'  => $keterangan,   // <-- kolom baru
                     'catatan'     => $item['catatan'] ?? null,
+                    'id_lab'      => Auth::user()->id_lab, // tambahkan jika perlu
                 ]);
             }
 

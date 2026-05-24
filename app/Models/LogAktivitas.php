@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class LogAktivitas extends Model
 {
@@ -14,7 +15,8 @@ class LogAktivitas extends Model
     protected $fillable = [
         'id_user',
         'aktivitas',
-        'deskripsi'
+        'deskripsi',
+        'id_lab'
     ];
 
     protected $casts = [
@@ -22,11 +24,22 @@ class LogAktivitas extends Model
         'updated_at' => 'datetime',
     ];
 
-    /**
-     * Relasi ke user (penanggung jawab aktivitas)
-     */
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user', 'id_user');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 }

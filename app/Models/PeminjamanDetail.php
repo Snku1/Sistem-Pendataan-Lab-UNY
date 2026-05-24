@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class PeminjamanDetail extends Model
 {
@@ -20,12 +21,22 @@ class PeminjamanDetail extends Model
         'catatan_kembali',
         'tanggal_kembali_aktual',
         'status_item',
-        'id_semester'   // tambah
+        'id_semester',
+        'id_lab'
     ];
 
     protected $casts = [
         'tanggal_kembali_aktual' => 'date',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('laboratorium', function ($builder) {
+            if (Auth::check() && !Auth::user()->isAdmin()) {
+                $builder->where('id_lab', Auth::user()->id_lab);
+            }
+        });
+    }
 
     public function peminjaman()
     {
@@ -40,5 +51,10 @@ class PeminjamanDetail extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class, 'id_semester');
+    }
+
+    public function laboratorium()
+    {
+        return $this->belongsTo(Laboratorium::class, 'id_lab');
     }
 }

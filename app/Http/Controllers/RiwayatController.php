@@ -23,7 +23,7 @@ class RiwayatController extends Controller
             $search = $request->search;
             $query->whereHas('barang', function ($q) use ($search) {
                 $q->where('nama_barang', 'like', "%{$search}%")
-                  ->orWhere('kode_barang', 'like', "%{$search}%");
+                    ->orWhere('kode_barang', 'like', "%{$search}%");
             });
         }
 
@@ -58,7 +58,7 @@ class RiwayatController extends Controller
             $search = $request->search_bm;
             $queryBarangMasuk->whereHas('barang', function ($q) use ($search) {
                 $q->where('nama_barang', 'like', "%{$search}%")
-                  ->orWhere('kode_barang', 'like', "%{$search}%");
+                    ->orWhere('kode_barang', 'like', "%{$search}%");
             });
         }
         if ($request->filled('tanggal_awal_bm')) {
@@ -80,7 +80,7 @@ class RiwayatController extends Controller
             $search = $request->search_stok;
             $queryStok->whereHas('barang', function ($q) use ($search) {
                 $q->where('nama_barang', 'like', "%{$search}%")
-                  ->orWhere('kode_barang', 'like', "%{$search}%");
+                    ->orWhere('kode_barang', 'like', "%{$search}%");
             });
         }
         if ($request->filled('jenis_perubahan')) {
@@ -102,7 +102,7 @@ class RiwayatController extends Controller
             $search = $request->search_log;
             $queryLog->where(function ($q) use ($search) {
                 $q->where('aktivitas', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
+                    ->orWhere('deskripsi', 'like', "%{$search}%");
             });
         }
         if ($request->filled('tanggal_awal_log')) {
@@ -129,17 +129,24 @@ class RiwayatController extends Controller
         $totalBulanIni  = LogAktivitas::whereDate('created_at', '>=', $monthStart)->count();
         $totalUserAktif = LogAktivitas::distinct('id_user')->count('id_user');
 
-        $userList = User::orderBy('nama')->get();
-        $jenisAktivitasList = LogAktivitas::select('aktivitas')->distinct()->pluck('aktivitas');
+        $userList = User::where('id_lab', auth()->user()->id_lab)->orderBy('nama')->get();
+        $jenisAktivitasList = LogAktivitas::where('id_lab', auth()->user()->id_lab)
+            ->select('aktivitas')->distinct()->pluck('aktivitas');
 
         $tab = $request->get('tab', 'barang-masuk');
 
         return view('riwayat.aktivitas', compact(
-            'barangMasuk', 'semesterList',
-            'riwayatStok', 'jenisList',
+            'barangMasuk',
+            'semesterList',
+            'riwayatStok',
+            'jenisList',
             'logs',
-            'totalHariIni', 'totalMingguIni', 'totalBulanIni', 'totalUserAktif',
-            'userList', 'jenisAktivitasList',
+            'totalHariIni',
+            'totalMingguIni',
+            'totalBulanIni',
+            'totalUserAktif',
+            'userList',
+            'jenisAktivitasList',
             'tab'
         ));
     }
@@ -155,7 +162,7 @@ class RiwayatController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('aktivitas', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
+                    ->orWhere('deskripsi', 'like', "%{$search}%");
             });
         }
         if ($request->filled('tanggal_awal')) {
@@ -175,7 +182,7 @@ class RiwayatController extends Controller
         $filename = 'riwayat_aktivitas_' . date('YmdHis') . '.csv';
 
         $headers = ['Waktu', 'User', 'Email', 'Aktivitas', 'Deskripsi'];
-        $callback = function() use ($logs, $headers) {
+        $callback = function () use ($logs, $headers) {
             $handle = fopen('php://output', 'w');
             fputs($handle, "\xEF\xBB\xBF");
             fputcsv($handle, $headers);

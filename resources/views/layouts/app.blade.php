@@ -20,19 +20,23 @@
         * {
             font-family: 'Inter', sans-serif;
         }
+
         body {
             background-color: #f5f7fb;
             overflow-x: hidden;
         }
+
         .navbar-brand {
             font-weight: 700;
             font-size: 1.25rem;
             white-space: nowrap;
         }
+
         .navbar-brand img {
             max-height: 35px;
             margin-right: 8px;
         }
+
         .sidebar {
             background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
             box-shadow: 1px 0 0 rgba(0, 0, 0, 0.05);
@@ -44,33 +48,41 @@
             position: sticky;
             top: 60px;
         }
+
         .sidebar-expanded {
             width: 260px;
         }
+
         .sidebar-collapsed {
             width: 70px;
         }
+
         .sidebar-collapsed .nav-link span,
         .sidebar-collapsed .nav-section-title span,
         .sidebar-collapsed .nav-section-title i:not(.fa-chevron-right) {
             display: none;
         }
+
         .sidebar-collapsed .nav-link {
             text-align: center;
             padding: 0.625rem 0;
         }
+
         .sidebar-collapsed .nav-link i {
             margin-right: 0 !important;
             width: auto;
             font-size: 1.25rem;
         }
+
         .sidebar-collapsed .nav-section-title {
             text-align: center;
             padding: 0.75rem 0;
         }
+
         .sidebar-collapsed .nav-section-title i {
             margin-right: 0;
         }
+
         .sidebar .nav-section-title {
             font-size: 0.7rem;
             font-weight: 600;
@@ -81,6 +93,7 @@
             margin-top: 0.5rem;
             transition: all 0.3s;
         }
+
         .sidebar .nav-link {
             color: #4a5568;
             padding: 0.625rem 1rem;
@@ -90,37 +103,45 @@
             font-weight: 500;
             transition: all 0.2s ease;
         }
+
         .sidebar .nav-link:hover {
             background-color: #eef2ff;
             color: #1e40af;
         }
+
         .sidebar .nav-link.active {
             background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
             color: white !important;
             box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
         }
+
         .sidebar .nav-link i {
             width: 1.75rem;
             font-size: 1rem;
             margin-right: 0.5rem;
         }
+
         .main-content {
             background-color: #f5f7fb;
             min-height: calc(100vh - 60px);
             flex-grow: 1;
             overflow-x: auto;
         }
+
         .app-container {
             display: flex;
             width: 100%;
         }
+
         .card-hover {
             transition: transform 0.2s, box-shadow 0.2s;
         }
+
         .card-hover:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
         }
+
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -133,31 +154,39 @@
             font-weight: 600;
             font-size: 0.875rem;
         }
+
         ::-webkit-scrollbar {
             width: 6px;
         }
+
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
         .notification-stok-menipis {
             background-color: #fee2e2;
             border-left: 4px solid #dc3545;
         }
+
         .notification-stok-menipis:hover {
             background-color: #fecaca;
         }
+
         .datetime-badge {
             background: linear-gradient(135deg, #0d6efd, #0b5ed7);
             padding: 0.5rem 1rem;
             border-radius: 50px;
         }
+
         .toggle-sidebar-btn {
             background: transparent;
             border: none;
@@ -166,9 +195,11 @@
             margin-right: 0.5rem;
             cursor: pointer;
         }
+
         .toggle-sidebar-btn:hover {
             color: rgba(255, 255, 255, 0.8);
         }
+
         .semester-dropdown-toggle {
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 50px;
@@ -180,16 +211,20 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
+
         .semester-dropdown-toggle:hover {
             background-color: rgba(255, 255, 255, 0.3);
         }
+
         .semester-dropdown-toggle::after {
             margin-left: 0.5rem;
             vertical-align: middle;
         }
+
         .semester-dropdown-menu {
             min-width: 220px;
         }
+
         .dropdown-item.active-semester {
             background-color: #0d6efd;
             color: white;
@@ -205,10 +240,12 @@
                 <button class="toggle-sidebar-btn d-none d-md-block" id="sidebarToggle">
                     <i class="fas fa-bars"></i>
                 </button>
+                @php
+                $labName = \App\Models\Setting::get('lab_name', 'Laboratorium UNY', auth()->user()->id_lab ?? null);
+                @endphp
                 <a class="navbar-brand ms-2" href="{{ route('dashboard') }}">
-                    <!-- Logo gambar UNY (ganti path sesuai lokasi file logo Anda) -->
                     <img src="{{ asset('images/logo-uny.png') }}" style="max-height: 35px;">
-                    <span class="fw-bold">Laboratorium AV & TV</span>
+                    <span class="fw-bold">{{ $labName }}</span>
                 </a>
             </div>
 
@@ -239,7 +276,9 @@
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2">
                             <li><a class="dropdown-item" href="{{ route('profile.index') }}"><i class="fas fa-user-circle me-2"></i>Profil Saya</a></li>
                             <li><a class="dropdown-item" href="{{ route('settings.index') }}"><i class="fas fa-cog me-2"></i>Pengaturan</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
@@ -431,7 +470,10 @@
                         formData.append('id_semester', id);
                         const resp = await fetch('{{ route("set-semester") }}', {
                             method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json'
+                            },
                             body: formData
                         });
                         if (resp.ok) {
@@ -457,9 +499,19 @@
 
         function updateDateTime() {
             const now = new Date();
-            const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' };
+            const options = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Jakarta'
+            };
             const timeString = now.toLocaleTimeString('id-ID', options);
-            const dateString = now.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+            const dateString = now.toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
             const dateTimeElement = document.getElementById('realTimeDateTime');
             if (dateTimeElement) {
                 dateTimeElement.innerHTML = `<i class="fas fa-calendar-alt me-1"></i> ${dateString} | <i class="fas fa-clock me-1"></i> ${timeString} WIB`;

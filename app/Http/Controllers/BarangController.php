@@ -24,7 +24,7 @@ class BarangController extends Controller
         } else {
             $newNumber = 1;
         }
-        return 'AV' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+        return 'BR' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
     private function getActiveSemesterId()
@@ -149,6 +149,7 @@ class BarangController extends Controller
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
             $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
             $data['id_semester'] = $activeSemesterId;
+            $data['id_lab'] = Auth::user()->id_lab;  // <---- TAMBAHKAN INI
 
             $barang = Barang::create($data);
             if ($request->has('penanggung_jawab')) {

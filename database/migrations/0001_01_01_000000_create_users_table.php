@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('nama');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'petugas']);
+            // Perbarui: tambahkan role 'koorlap' dan default 'teknisi'
+            $table->enum('role', ['admin', 'koorlap', 'teknisi'])->default('teknisi');
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

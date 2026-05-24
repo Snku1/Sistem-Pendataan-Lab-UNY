@@ -10,7 +10,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="fw-bold text-dark mb-1">Dashboard</h2>
-            <p class="text-muted">Selamat datang di Sistem Informasi Inventaris Laboratorium AV & TV</p>
+            @php
+                $labName = \App\Models\Setting::get('lab_name', 'Laboratorium UNY', auth()->user()->id_lab ?? null);
+            @endphp
+            <p class="text-muted">Selamat datang di Sistem Informasi Inventaris {{ $labName }}</p>
         </div>
         <div class="text-end">
             <div class="datetime-badge text-white" id="realTimeDateTime">
