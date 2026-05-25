@@ -11,7 +11,7 @@ class AdminPenanggungJawabController extends Controller
 {
     public function index()
     {
-        $list = PenanggungJawab::with('laboratorium')->orderBy('created_at', 'desc')->paginate(10);
+        $list = PenanggungJawab::with('laboratorium')->orderBy('created_at', 'asc')->paginate(10);
         return view('admin.penanggung-jawab.index', compact('list'));
     }
 

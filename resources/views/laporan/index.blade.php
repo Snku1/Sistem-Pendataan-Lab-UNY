@@ -134,7 +134,7 @@
                     <a href="{{ route('laporan.index', array_merge(request()->except('jenis'), ['jenis' => 'barang-masuk'])) }}" class="text-decoration-none">
                         <div class="d-flex align-items-center p-3 rounded-4 border {{ $jenis == 'barang-masuk' ? 'bg-primary bg-opacity-10 border-primary' : 'border-secondary' }}">
                             <div class="flex-shrink-0"><i class="fas fa-truck fs-2 text-success"></i></div>
-                            <div class="flex-grow-1 ms-3"><h6 class="fw-bold mb-1 text-dark">Barang Datang</h6><small class="text-muted">Riwayat penerimaan barang</small></div>
+                            <div class="flex-grow-1 ms-3"><h6 class="fw-bold mb-1 text-dark">Barang Masuk</h6><small class="text-muted">Riwayat penerimaan barang</small></div>
                             @if($jenis == 'barang-masuk')<i class="fas fa-check-circle text-primary"></i>@endif
                         </div>
                     </a>
@@ -166,7 +166,7 @@
         <div class="card-header bg-transparent border-0 pt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="fw-semibold mb-0"><i class="fas fa-eye me-2 text-primary"></i> Preview Laporan:
                 @if($jenis == 'barang') Data Barang
-                @elseif($jenis == 'barang-masuk') Barang Datang
+                @elseif($jenis == 'barang-masuk') Barang Masuk
                 @elseif($jenis == 'riwayat-peminjaman') Riwayat Peminjaman
                 @else Manajemen Stok
                 @endif
@@ -244,8 +244,12 @@
                                         <i class="fas fa-file-pdf"></i>
                                     </a>
                                     <!-- Tombol CSV -->
-                                    <a href="{{ route('peminjaman.export-detail-csv', $row->id_peminjaman) }}" class="btn btn-sm btn-success rounded-pill" title="Export CSV">
+                                    <a href="{{ route('peminjaman.export-detail-csv', $row->id_peminjaman) }}" class="btn btn-sm btn-success rounded-pill me-1" title="Export CSV">
                                         <i class="fas fa-file-csv"></i>
+                                    </a>
+                                    <!-- Tombol Excel (baru) -->
+                                    <a href="{{ route('peminjaman.export-detail-excel', $row->id_peminjaman) }}" class="btn btn-sm btn-primary rounded-pill" title="Export Excel">
+                                        <i class="fas fa-file-excel"></i>
                                     </a>
                                 </td>
                             @elseif($jenis == 'manajemen-stok')
@@ -299,7 +303,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Informasi peminjaman -->
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <p><strong>Peminjam:</strong> {{ $row->nama_peminjam }} @if($row->nim) ({{ $row->nim }}) @endif</p>

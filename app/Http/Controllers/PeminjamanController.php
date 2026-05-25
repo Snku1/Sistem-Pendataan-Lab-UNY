@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PeminjamanCreated;
-use PDF; // DomPDF facade
+use PDF;
 use Carbon\Carbon;
 
 class PeminjamanController extends Controller
@@ -24,9 +24,6 @@ class PeminjamanController extends Controller
         return session('active_semester_id');
     }
 
-    /**
-     * Pastikan semester aktif spesifik (bukan 0) untuk operasi yang memerlukan penyimpanan.
-     */
     private function requireSpecificSemester()
     {
         $activeId = $this->getActiveSemesterId();
@@ -224,7 +221,7 @@ class PeminjamanController extends Controller
             $data['id_user'] = Auth::id();
             $data['status_transaksi'] = 'aktif';
             $data['id_semester'] = $activeSemesterId;
-            $data['id_lab'] = Auth::user()->id_lab;  // <---- TAMBAHKAN INI
+            $data['id_lab'] = Auth::user()->id_lab;
 
             if ($request->hasFile('surat_peminjaman')) {
                 $data['surat_peminjaman'] = $request->file('surat_peminjaman')->store('surat_peminjaman', 'public');
@@ -234,16 +231,14 @@ class PeminjamanController extends Controller
 
             foreach ($request->items as $item) {
                 $barang = Barang::find($item['id_barang']);
-
                 $peminjaman->details()->create([
                     'id_barang' => $item['id_barang'],
                     'jumlah' => $item['jumlah'],
                     'kondisi_awal' => 'baik',
                     'status_item' => 'dipinjam',
                     'id_semester' => $activeSemesterId,
-                    'id_lab' => Auth::user()->id_lab,  // <---- TAMBAHKAN (atau ambil dari $peminjaman->id_lab)
+                    'id_lab' => Auth::user()->id_lab,
                 ]);
-
                 $barang->decrement('jumlah_baik', $item['jumlah']);
                 $barang->decrement('stok', $item['jumlah']);
             }
@@ -252,6 +247,7 @@ class PeminjamanController extends Controller
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Peminjaman Barang',
                 'deskripsi' => "Peminjaman baru: {$peminjaman->kode_transaksi} oleh {$peminjaman->nama_peminjam}",
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -282,22 +278,16 @@ class PeminjamanController extends Controller
             return redirect()->route('pilih-semester');
         }
 
-        if ($activeSemesterId != 0) {
-            $peminjaman = Peminjaman::where('id_peminjaman', $id)
-                ->where('id_semester', $activeSemesterId)
-                ->where('status_transaksi', 'aktif')
-                ->with(['details' => function ($q) {
-                    $q->where('status_item', 'dipinjam');
-                }, 'details.barang'])
-                ->first();
-            if (!$peminjaman) {
-                return redirect()->route('peminjaman.index')->with('error', 'Peminjaman tidak ditemukan atau tidak dapat diakses pada semester saat ini.');
-            }
-        } else {
-            $peminjaman = Peminjaman::with(['details' => function ($q) {
+        $peminjaman = Peminjaman::where('status_transaksi', 'aktif')
+            ->with(['details' => function ($q) {
                 $q->where('status_item', 'dipinjam');
-            }, 'details.barang'])->where('status_transaksi', 'aktif')->findOrFail($id);
+            }, 'details.barang'])
+            ->findOrFail($id);
+
+        if ($activeSemesterId != 0 && $peminjaman->id_semester != $activeSemesterId) {
+            return redirect()->route('peminjaman.index')->with('error', 'Peminjaman tidak ditemukan atau tidak dapat diakses pada semester saat ini.');
         }
+
         return view('peminjaman.pengembalian', compact('peminjaman'));
     }
 
@@ -372,6 +362,7 @@ class PeminjamanController extends Controller
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Pengembalian Barang',
                 'deskripsi' => "Pengembalian pada transaksi: {$peminjaman->kode_transaksi} oleh {$peminjaman->nama_peminjam}",
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -414,6 +405,7 @@ class PeminjamanController extends Controller
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Hapus Peminjaman',
                 'deskripsi' => "Menghapus peminjaman: {$peminjaman->kode_transaksi}",
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -424,11 +416,6 @@ class PeminjamanController extends Controller
         }
     }
 
-    // ==================== EKSPOR DETAIL PEMINJAMAN ====================
-
-    /**
-     * Ekspor detail peminjaman ke PDF
-     */
     public function exportDetailPdf($id)
     {
         $peminjaman = Peminjaman::with('details.barang')->findOrFail($id);
@@ -437,9 +424,6 @@ class PeminjamanController extends Controller
         return $pdf->download($safeFilename);
     }
 
-    /**
-     * Ekspor detail peminjaman ke CSV
-     */
     public function exportDetailCsv($id)
     {
         $peminjaman = Peminjaman::with('details.barang')->findOrFail($id);
@@ -469,5 +453,67 @@ class PeminjamanController extends Controller
             'Content-Type' => 'text/csv',
             'Content-Disposition' => 'attachment; filename="' . $safeFilename . '"',
         ]);
+    }
+
+    /**
+     * Ekspor detail peminjaman ke Excel menggunakan xlswriter
+     */
+    public function exportDetailExcel($id)
+    {
+        $peminjaman = Peminjaman::with('details.barang')->findOrFail($id);
+
+        // Buat direktori temp jika belum ada
+        $tempDir = storage_path('app/temp');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $filename = 'detail_peminjaman_' . str_replace('/', '_', $peminjaman->kode_transaksi) . '.xlsx';
+        $filePath = $tempDir . '/' . $filename;
+
+        // Inisialisasi Excel dengan xlswriter
+        $excel = new \Vtiful\Kernel\Excel(['path' => $tempDir]);
+
+        // Data untuk sheet
+        $data = [];
+
+        // Header informasi peminjaman
+        $data[] = ['Detail Peminjaman', '', '', '', '', '', '', '', ''];
+        $data[] = [];
+        $data[] = ['Kode Transaksi:', $peminjaman->kode_transaksi, 'Peminjam:', $peminjaman->nama_peminjam, 'Email:', $peminjaman->email];
+        $data[] = ['Tanggal Penggunaan:', Carbon::parse($peminjaman->tanggal_penggunaan)->format('d/m/Y'), 'Tanggal Jatuh Tempo:', Carbon::parse($peminjaman->tanggal_jatuh_tempo)->format('d/m/Y'), 'Status Transaksi:', ucfirst($peminjaman->status_transaksi)];
+        $data[] = ['Catatan Awal:', $peminjaman->catatan_awal ?? '-', '', '', '', '', '', '', ''];
+        $data[] = [];
+
+        // Header tabel detail
+        $data[] = ['No', 'Nama Barang', 'Merk', 'Jumlah', 'Kondisi Awal', 'Kondisi Setelah', 'Status Item', 'Tanggal Kembali', 'Catatan Kembali'];
+
+        // Baris detail
+        $no = 1;
+        foreach ($peminjaman->details as $detail) {
+            $data[] = [
+                $no,
+                $detail->barang->nama_barang ?? '-',
+                $detail->barang->merk ?? '-',
+                $detail->jumlah,
+                ucfirst($detail->kondisi_awal),
+                ucfirst($detail->kondisi_setelah ?? '-'),
+                $detail->status_item == 'dipinjam' ? 'Dipinjam' : 'Kembali',
+                $detail->tanggal_kembali_aktual ? Carbon::parse($detail->tanggal_kembali_aktual)->format('d/m/Y') : '-',
+                $detail->catatan_kembali ?? '-',
+            ];
+            $no++;
+        }
+
+        // Tulis data ke file
+        $excel->fileName($filename, 'Sheet1')
+              ->header([]) // tidak ada header terpisah karena kita sudah memasukkan header manual
+              ->data($data);
+
+        // Simpan file
+        $excel->output();
+
+        // Kirim response download dan hapus file setelah selesai
+        return response()->download($filePath)->deleteFileAfterSend(true);
     }
 }

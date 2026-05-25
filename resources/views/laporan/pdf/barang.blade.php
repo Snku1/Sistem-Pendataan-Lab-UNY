@@ -7,7 +7,7 @@
         body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; }
         .header { text-align: center; margin-bottom: 20px; }
         .header h1 { margin: 0; font-size: 18px; }
-        .header p { margin: 5px 0; color: #555; }
+        .header .lab-name { font-size: 14px; color: #0d6efd; margin-top: 5px; }
         .filter-info { margin-bottom: 15px; font-size: 11px; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 8px 0; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
@@ -18,14 +18,17 @@
     </style>
 </head>
 <body>
+    @php
+        $labName = \App\Models\Setting::get('lab_name', 'Laboratorium UNY', auth()->user()->id_lab ?? null);
+    @endphp
     <div class="header">
         <h1>LAPORAN DATA BARANG</h1>
-        <p>Sistem Informasi Laboratorium AV & TV</p>
+        <div class="lab-name">{{ $labName }}</div>
+        <p>Periode: {{ \Carbon\Carbon::parse($request->get('tanggal_awal'))->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($request->get('tanggal_akhir'))->format('d/m/Y') }}</p>
     </div>
     <div class="filter-info">
         <strong>Filter yang diterapkan:</strong><br>
-        Semester: {{ $request->get('id_semester') ? (App\Models\Semester::find($request->id_semester)->nama_semester ?? '-') : 'Semua' }} |
-        Tanggal cetak: {{ now()->format('d/m/Y H:i') }}
+        Semester: {{ $request->get('id_semester') ? (App\Models\Semester::find($request->get('id_semester'))->nama_semester ?? '-') : 'Semua' }}
     </div>
     <table>
         <thead>
@@ -68,7 +71,7 @@
         </tfoot>
     </table>
     <div class="footer">
-        Dicetak pada {{ now()->format('d/m/Y H:i:s') }} | © Sistem Lab AV & TV
+        Dicetak pada {{ now()->translatedFormat('d F Y H:i:s') }}
     </div>
 </body>
 </html>

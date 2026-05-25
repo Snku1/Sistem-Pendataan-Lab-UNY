@@ -19,9 +19,6 @@ class StokOpnameController extends Controller
         return session('active_semester_id');
     }
 
-    /**
-     * Pastikan semester aktif spesifik (bukan 0) untuk operasi yang memerlukan penyimpanan.
-     */
     private function requireSpecificSemester()
     {
         $activeId = $this->getActiveSemesterId();
@@ -58,7 +55,6 @@ class StokOpnameController extends Controller
         if ($request->filled('tanggal_awal')) {
             $query->whereDate('tanggal_opname', '>=', $request->tanggal_awal);
         }
-
         if ($request->filled('tanggal_akhir')) {
             $query->whereDate('tanggal_opname', '<=', $request->tanggal_akhir);
         }
@@ -76,7 +72,6 @@ class StokOpnameController extends Controller
         }
 
         $activeSemesterId = $this->getActiveSemesterId();
-        // Hanya tampilkan barang dari semester aktif
         $barang = Barang::where('id_semester', $activeSemesterId)
             ->orderBy('kode_barang')
             ->get();
@@ -107,7 +102,7 @@ class StokOpnameController extends Controller
             $data['id_user'] = Auth::id();
             $data['status'] = 'selesai';
             $data['id_semester'] = $activeSemesterId;
-            $data['id_lab'] = Auth::user()->id_lab;  // <---- TAMBAHKAN INI
+            $data['id_lab'] = Auth::user()->id_lab;
 
             $opname = StokOpname::create($data);
 
@@ -117,14 +112,7 @@ class StokOpnameController extends Controller
                 $stokFisik = $item['stok_fisik'];
                 $selisih = $stokFisik - $stokSistem;
 
-                // Tentukan keterangan berdasarkan selisih
-                if ($selisih == 0) {
-                    $keterangan = 'Sesuai';
-                } elseif ($selisih > 0) {
-                    $keterangan = 'Kelebihan';
-                } else {
-                    $keterangan = 'Kekurangan';
-                }
+                $keterangan = $selisih == 0 ? 'Sesuai' : ($selisih > 0 ? 'Kelebihan' : 'Kekurangan');
 
                 StokOpnameDetail::create([
                     'id_opname'   => $opname->id_opname,
@@ -132,9 +120,9 @@ class StokOpnameController extends Controller
                     'stok_sistem' => $stokSistem,
                     'stok_fisik'  => $stokFisik,
                     'selisih'     => $selisih,
-                    'keterangan'  => $keterangan,   // <-- kolom baru
+                    'keterangan'  => $keterangan,
                     'catatan'     => $item['catatan'] ?? null,
-                    'id_lab'      => Auth::user()->id_lab, // tambahkan jika perlu
+                    'id_lab'      => Auth::user()->id_lab,
                 ]);
             }
 
@@ -142,6 +130,7 @@ class StokOpnameController extends Controller
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Stok Opname',
                 'deskripsi' => "Stok opname baru: {$opname->kode_opname}",
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -176,6 +165,7 @@ class StokOpnameController extends Controller
             'id_user' => Auth::id(),
             'aktivitas' => 'Hapus Stok Opname',
             'deskripsi' => "Menghapus stok opname: {$opname->kode_opname}",
+            'id_lab' => Auth::user()->id_lab,
         ]);
 
         return redirect()->route('stok-opname.index')->with('success', 'Data stok opname dihapus.');

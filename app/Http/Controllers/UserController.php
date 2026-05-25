@@ -12,21 +12,29 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::where('id_lab', auth()->user()->id_lab)
-                     ->where('role', 'teknisi')
-                     ->orderBy('id_user', 'asc');
+        $labId = auth()->user()->id_lab;
+
+        // Query untuk daftar teknisi
+        $query = User::where('id_lab', $labId)
+            ->where('role', 'teknisi')
+            ->orderBy('id_user', 'asc');
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 
         $users = $query->paginate(10)->withQueryString();
 
-        return view('user.index', compact('users'));
+        // Statistik per lab
+        $totalTeknisi = User::where('id_lab', $labId)->where('role', 'teknisi')->count();
+        $totalTeknisiAktif = User::where('id_lab', $labId)->where('role', 'teknisi')
+            ->whereNotNull('email_verified_at')->count();
+
+        return view('user.index', compact('users', 'totalTeknisi', 'totalTeknisiAktif'));
     }
 
     public function create()
@@ -61,16 +69,16 @@ class UserController extends Controller
     public function edit($id)
     {
         $user = User::where('id_lab', auth()->user()->id_lab)
-                    ->where('role', 'teknisi')
-                    ->findOrFail($id);
+            ->where('role', 'teknisi')
+            ->findOrFail($id);
         return view('user.edit', compact('user'));
     }
 
     public function update(Request $request, $id)
     {
         $user = User::where('id_lab', auth()->user()->id_lab)
-                    ->where('role', 'teknisi')
-                    ->findOrFail($id);
+            ->where('role', 'teknisi')
+            ->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'nama' => 'required|string|max:255',
@@ -102,8 +110,8 @@ class UserController extends Controller
     public function destroy($id)
     {
         $user = User::where('id_lab', auth()->user()->id_lab)
-                    ->where('role', 'teknisi')
-                    ->findOrFail($id);
+            ->where('role', 'teknisi')
+            ->findOrFail($id);
 
         if ($user->id_user == auth()->id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat menghapus akun sendiri.');

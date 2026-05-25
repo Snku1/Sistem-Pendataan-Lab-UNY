@@ -314,7 +314,7 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('barang-masuk.*') ? 'active' : '' }}" href="{{ route('barang-masuk.index') }}">
-                            <i class="fas fa-truck-loading me-2"></i> <span>Barang Datang</span>
+                            <i class="fas fa-truck-loading me-2"></i> <span>Barang Masuk</span>
                         </a>
                     </li>
                     <li class="nav-item">

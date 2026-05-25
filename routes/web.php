@@ -107,6 +107,8 @@ Route::middleware(['auth', 'role:koorlap,teknisi', 'check.semester'])->group(fun
         Route::delete('/{id}', [PeminjamanController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/export-detail-pdf', [PeminjamanController::class, 'exportDetailPdf'])->name('export-detail-pdf');
         Route::get('/{id}/export-detail-csv', [PeminjamanController::class, 'exportDetailCsv'])->name('export-detail-csv');
+        // ========== TAMBAHKAN INI ==========
+        Route::get('/{id}/export-detail-excel', [PeminjamanController::class, 'exportDetailExcel'])->name('export-detail-excel');
     });
 
     // Stok
@@ -138,7 +140,7 @@ Route::middleware(['auth', 'role:koorlap,teknisi', 'check.semester'])->group(fun
         Route::get('/', [LaporanController::class, 'index'])->name('index');
         Route::get('/export-pdf/{jenis}', [LaporanController::class, 'exportPdf'])->name('export-pdf');
         Route::get('/export-csv/{jenis}', [LaporanController::class, 'exportCsv'])->name('export-csv');
-        Route::get('/export-excel/{jenis}', [LaporanController::class, 'exportExcel'])->name('export-excel'); // <-- TAMBAHKAN INI
+        Route::get('/export-excel/{jenis}', [LaporanController::class, 'exportExcel'])->name('export-excel');
     });
 
     // ==================== PENGATURAN SISTEM PER LAB (KOORLAP/TEKNISI) ====================

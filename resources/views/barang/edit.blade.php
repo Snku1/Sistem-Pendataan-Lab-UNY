@@ -192,11 +192,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Footer -->
-    <div class="text-center py-3 border-top">
-        <small class="text-muted">© 2024 Sistem Informasi Laboratorium Terintegrasi (SILABT). Hak Cipta Dilindungi.</small>
-    </div>
 </div>
 
 <script>

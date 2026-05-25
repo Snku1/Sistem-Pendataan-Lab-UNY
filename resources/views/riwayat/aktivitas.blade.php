@@ -92,11 +92,19 @@
                     </form>
                     <div class="table-responsive mt-3">
                         <table class="table table-bordered table-hover mb-0 align-middle" style="font-size:0.85rem">
-                            <thead class="table-light"><tr><th>Tanggal</th><th>Nama Barang</th><th>Jumlah</th><th>Semester</th><th>User Penerima</th></tr></thead>
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Nama Barang</th>
+                                    <th>Jumlah</th>
+                                    <th>Semester</th>
+                                    <th>User Penerima</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 @forelse($barangMasuk as $bm)
                                 <tr>
-                                    <td>{{ \Carbon\Carbon::parse($bm->tanggal_masuk)->translatedFormat('d M Y H:i') }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($bm->created_at)->translatedFormat('d M Y H:i') }}</td>
                                     <td>{{ $bm->barang->nama_barang ?? '-' }}<br><small>{{ $bm->barang->kode_barang ?? '' }}</small></td>
                                     <td>{{ $bm->jumlah_masuk }} unit</td>
                                     <td>{{ $bm->semester ? $bm->semester->nama_semester.' '.$bm->semester->tahun_ajaran : '-' }}</td>
@@ -113,7 +121,7 @@
             </div>
         </div>
 
-        <!-- TAB STOK -->
+        <!-- TAB STOK (tidak diubah) -->
         <div class="tab-pane fade {{ $tab == 'stok' ? 'show active' : '' }}" id="stok">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-3">
@@ -149,7 +157,9 @@
                     </form>
                     <div class="table-responsive mt-3">
                         <table class="table table-bordered table-hover mb-0 align-middle" style="font-size:0.85rem">
-                            <thead class="table-light"><tr><th>Waktu</th><th>Barang</th><th>Stok Lama</th><th>Stok Baru</th><th>Perubahan</th><th>Jenis</th><th>Alasan</th><th>User</th></tr></thead>
+                            <thead class="table-light">
+                                <tr><th>Waktu</th><th>Barang</th><th>Stok Lama</th><th>Stok Baru</th><th>Perubahan</th><th>Jenis</th><th>Alasan</th><th>User</th></tr>
+                            </thead>
                             <tbody>
                                 @forelse($riwayatStok as $item)
                                 <tr>
@@ -173,7 +183,7 @@
             </div>
         </div>
 
-        <!-- TAB LOG AKTIVITAS -->
+        <!-- TAB LOG AKTIVITAS (tidak diubah) -->
         <div class="tab-pane fade {{ $tab == 'log' ? 'show active' : '' }}" id="log">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-3">
@@ -218,7 +228,9 @@
                     </form>
                     <div class="table-responsive mt-3">
                         <table class="table table-bordered table-hover mb-0 align-middle" style="font-size:0.85rem">
-                            <thead class="table-light"><tr><th>Waktu</th><th>User</th><th>Aktivitas</th><th>Deskripsi</th></tr></thead>
+                            <thead class="table-light">
+                                <tr><th>Waktu</th><th>User</th><th>Aktivitas</th><th>Deskripsi</th></tr>
+                            </thead>
                             <tbody>
                                 @forelse($logs as $log)
                                 <tr>

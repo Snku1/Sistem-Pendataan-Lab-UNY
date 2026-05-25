@@ -12,19 +12,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule; // <-- Tambahkan ini
+use Illuminate\Validation\Rule;
 
 class BarangController extends Controller
 {
     private function generateKodeBarang()
     {
-        $lastBarang = Barang::orderBy('id_barang', 'desc')->first();
+        $activeSemesterId = $this->getActiveSemesterId();
+        $idLab = Auth::user()->id_lab;
+
+        $lastBarang = Barang::where('id_lab', $idLab)
+                            ->where('id_semester', $activeSemesterId)
+                            ->orderBy('id_barang', 'desc')
+                            ->first();
+
         if ($lastBarang && $lastBarang->kode_barang) {
             $lastNumber = intval(substr($lastBarang->kode_barang, 2));
             $newNumber = $lastNumber + 1;
         } else {
             $newNumber = 1;
         }
+
         return 'BR' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
     }
 
@@ -107,6 +115,10 @@ class BarangController extends Controller
             return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu (bukan "Semua Semester") untuk menambah barang.');
         }
 
+        if (!Auth::user()->id_lab) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda tidak terhubung ke laboratorium. Hubungi admin.');
+        }
+
         $lokasi = Lokasi::all();
         $penanggungJawab = PenanggungJawab::all();
         $kodeBarangOtomatis = $this->generateKodeBarang();
@@ -120,14 +132,19 @@ class BarangController extends Controller
             return redirect()->route('semester.daftar')->with('warning', 'Pilih semester tertentu untuk menyimpan barang.');
         }
 
-        // Validasi dengan unique per id_lab dan id_semester
+        if (!Auth::user()->id_lab) {
+            return back()->with('error', 'Akun Anda tidak terhubung ke laboratorium. Hubungi admin.');
+        }
+
+        $idLab = Auth::user()->id_lab;
+
         $request->validate([
             'kode_barang' => [
                 'nullable',
                 'string',
                 'max:255',
-                Rule::unique('barang')->where(function ($query) use ($activeSemesterId) {
-                    return $query->where('id_lab', Auth::user()->id_lab)
+                Rule::unique('barang')->where(function ($query) use ($activeSemesterId, $idLab) {
+                    return $query->where('id_lab', $idLab)
                                  ->where('id_semester', $activeSemesterId);
                 }),
             ],
@@ -153,7 +170,7 @@ class BarangController extends Controller
             $data['jumlah_hilang'] = $data['jumlah_hilang'] ?? 0;
             $data['stok'] = $data['jumlah_baik'] + $data['jumlah_rusak'] + $data['jumlah_hilang'];
             $data['id_semester'] = $activeSemesterId;
-            $data['id_lab'] = Auth::user()->id_lab;
+            $data['id_lab'] = $idLab;
 
             $barang = Barang::create($data);
             if ($request->has('penanggung_jawab')) {
@@ -163,7 +180,8 @@ class BarangController extends Controller
             LogAktivitas::create([
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Menambah Barang',
-                'deskripsi' => 'Menambah barang ' . $barang->nama_barang . ' dengan kode ' . $barang->kode_barang
+                'deskripsi' => 'Menambah barang ' . $barang->nama_barang . ' dengan kode ' . $barang->kode_barang,
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -193,6 +211,10 @@ class BarangController extends Controller
             return redirect()->route('barang.index')->with('error', 'Anda tidak dapat mengedit barang dari semester lain.');
         }
 
+        if (Auth::user()->id_lab != $barang->id_lab) {
+            return redirect()->route('barang.index')->with('error', 'Anda tidak memiliki akses ke barang dari laboratorium lain.');
+        }
+
         $lokasi = Lokasi::all();
         $penanggungJawab = PenanggungJawab::all();
         return view('barang.edit', compact('barang', 'lokasi', 'penanggungJawab'));
@@ -210,7 +232,10 @@ class BarangController extends Controller
             return redirect()->route('barang.index')->with('error', 'Anda tidak dapat mengedit barang dari semester lain.');
         }
 
-        // Validasi update dengan unique per id_lab dan id_semester, mengabaikan barang yang sedang diedit
+        if (Auth::user()->id_lab != $barang->id_lab) {
+            return redirect()->route('barang.index')->with('error', 'Anda tidak memiliki akses ke barang dari laboratorium lain.');
+        }
+
         $validator = validator($request->all(), [
             'kode_barang' => [
                 'required',
@@ -250,7 +275,8 @@ class BarangController extends Controller
             LogAktivitas::create([
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Mengedit Barang',
-                'deskripsi' => 'Mengedit barang ' . $barang->nama_barang
+                'deskripsi' => 'Mengedit barang ' . $barang->nama_barang,
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -274,6 +300,10 @@ class BarangController extends Controller
             return redirect()->route('barang.index')->with('error', 'Anda tidak dapat menghapus barang dari semester lain.');
         }
 
+        if (Auth::user()->id_lab != $barang->id_lab) {
+            return redirect()->route('barang.index')->with('error', 'Anda tidak memiliki akses ke barang dari laboratorium lain.');
+        }
+
         $namaBarang = $barang->nama_barang;
 
         DB::beginTransaction();
@@ -284,7 +314,8 @@ class BarangController extends Controller
             LogAktivitas::create([
                 'id_user' => Auth::id(),
                 'aktivitas' => 'Menghapus Barang',
-                'deskripsi' => 'Menghapus barang ' . $namaBarang
+                'deskripsi' => 'Menghapus barang ' . $namaBarang,
+                'id_lab' => Auth::user()->id_lab,
             ]);
 
             DB::commit();
@@ -316,6 +347,7 @@ class BarangController extends Controller
             'id_user' => Auth::id(),
             'aktivitas' => 'Update Kondisi Awal',
             'deskripsi' => 'Memperbarui kondisi awal penerimaan barang ID: ' . $id,
+            'id_lab' => Auth::user()->id_lab,
         ]);
 
         return redirect()->route('barang-masuk.index')->with('success', 'Kondisi awal barang berhasil diperbarui.');

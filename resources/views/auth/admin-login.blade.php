@@ -126,16 +126,6 @@
             cursor: pointer;
         }
 
-        .forgot-link {
-            color: #191970;
-            text-decoration: none;
-            font-size: 13px;
-        }
-
-        .forgot-link:hover {
-            text-decoration: underline;
-        }
-
         button {
             width: 100%;
             padding: 12px;
@@ -216,7 +206,7 @@
                     <input type="checkbox" name="remember">
                     Keep me logged in
                 </label>
-                <a href="{{ route('password.request') }}" class="forgot-link">Forgot password?</a>
+                <!-- Link "Forgot password?" dihapus -->
             </div>
 
             <button type="submit">Login as Admin</button>

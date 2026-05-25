@@ -21,10 +21,10 @@
             font-size: 20px;
             color: #0d6efd;
         }
-        .header p {
-            margin: 5px 0 0;
-            font-size: 12px;
+        .header .lab-name {
+            font-size: 14px;
             color: #555;
+            margin-top: 5px;
         }
         .info-section {
             margin-bottom: 20px;
@@ -71,8 +71,12 @@
     </style>
 </head>
 <body>
+    @php
+        $labName = \App\Models\Setting::get('lab_name', 'Laboratorium UNY', auth()->user()->id_lab ?? null);
+    @endphp
     <div class="header">
         <h1>DETAIL PEMINJAMAN</h1>
+        <div class="lab-name">{{ $labName }}</div>
         <p>Kode Transaksi: {{ $peminjaman->kode_transaksi }}</p>
     </div>
 
@@ -115,7 +119,7 @@
                     @else
                         <span style="color: #28a745;">Kembali</span>
                     @endif
-                </td>
+                 </td>
                 <td>{{ $detail->tanggal_kembali_aktual ? \Carbon\Carbon::parse($detail->tanggal_kembali_aktual)->translatedFormat('d M Y') : '-' }}</td>
                 <td>{{ $detail->catatan_kembali ?? '-' }}</td>
             </tr>
@@ -124,8 +128,7 @@
     </table>
 
     <div class="footer">
-        Dicetak pada {{ now()->translatedFormat('d F Y H:i:s') }} <br>
-        © {{ now()->year }} Sistem Informasi Laboratorium AV & TV
+        Dicetak pada {{ now()->translatedFormat('d F Y H:i:s') }}
     </div>
 </body>
 </html>

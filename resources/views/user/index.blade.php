@@ -16,16 +16,15 @@
         </div>
     </div>
 
-    <!-- Statistik (hanya koorlab) -->
-    @php
-        $totalUser = App\Models\User::count();
-        $totalTeknisi = App\Models\User::where('role', 'teknisi')->count();
-    @endphp
+    <!-- Statistik sesuai lab -->
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                    <div><p class="text-muted mb-1 small">Total Teknisi</p><h3 class="fw-bold text-primary mb-0">{{ $totalTeknisi }}</h3></div>
+                    <div>
+                        <p class="text-muted mb-1 small">Total Teknisi</p>
+                        <h3 class="fw-bold text-primary mb-0">{{ $totalTeknisi }}</h3>
+                    </div>
                     <div class="rounded-circle bg-primary bg-opacity-10 p-3"><i class="fas fa-users text-primary fs-4"></i></div>
                 </div>
             </div>
@@ -33,8 +32,11 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-3 d-flex justify-content-between align-items-center">
-                    <div><p class="text-muted mb-1 small">Teknisi Aktif</p><h3 class="fw-bold text-success mb-0">{{ $totalTeknisi }}</h3></div>
-                    <div class="rounded-circle bg-success bg-opacity-10 p-3"><i class="fas fa-user-shield text-success fs-4"></i></div>
+                    <div>
+                        <p class="text-muted mb-1 small">Teknisi Aktif</p>
+                        <h3 class="fw-bold text-success mb-0">{{ $totalTeknisiAktif }}</h3>
+                    </div>
+                    <div class="rounded-circle bg-success bg-opacity-10 p-3"><i class="fas fa-user-check text-success fs-4"></i></div>
                 </div>
             </div>
         </div>
@@ -46,8 +48,8 @@
             <form method="GET" action="{{ route('user.index') }}" class="row g-3 align-items-end">
                 <div class="col-md-6">
                     <label class="form-label small fw-semibold">Cari Teknisi</label>
-                    <input type="text" name="search" class="form-control form-control-sm rounded-pill" 
-                           value="{{ request('search') }}" placeholder="Nama atau email...">
+                    <input type="text" name="search" class="form-control form-control-sm rounded-pill"
+                        value="{{ request('search') }}" placeholder="Nama atau email...">
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3"><i class="fas fa-filter me-1"></i> Filter</button>
@@ -67,7 +69,6 @@
                 <table class="table table-bordered table-hover mb-0 align-middle" style="font-size:0.85rem">
                     <thead class="table-light">
                         <tr>
-                            <th>ID</th>
                             <th>Nama</th>
                             <th>Email</th>
                             <th>Role</th>
@@ -78,7 +79,6 @@
                     <tbody>
                         @forelse($users as $user)
                         <tr>
-                            <td>{{ $user->id_user }}</td>
                             <td>{{ $user->nama }}@if($user->id_user == auth()->id()) <span class="badge bg-primary bg-opacity-10 text-primary ms-1">Anda</span>@endif</td>
                             <td>{{ $user->email }}</td>
                             <td><span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill">Teknisi</span></td>
@@ -98,7 +98,9 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="text-center py-4 text-muted">Belum ada teknisi. <a href="{{ route('user.create') }}">Tambah teknisi</a> sekarang.</td></tr>
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Belum ada teknisi. <a href="{{ route('user.create') }}">Tambah teknisi</a> sekarang.</td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>

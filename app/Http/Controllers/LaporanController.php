@@ -9,15 +9,25 @@ use App\Models\PeminjamanDetail;
 use App\Models\Lokasi;
 use App\Models\Semester;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use PDF;
 
 class LaporanController extends Controller
 {
+    /**
+     * Mendapatkan ID laboratorium user yang login (null untuk admin)
+     */
+    private function getLabId()
+    {
+        $user = Auth::user();
+        return ($user && !$user->isAdmin()) ? $user->id_lab : null;
+    }
+
     public function index(Request $request)
     {
         $jenis = $request->get('jenis', 'barang');
 
-        $semesterList = Semester::orderBy('tahun_ajaran', 'desc')->orderBy('nama_semester', 'desc')->get();
+        $semesterList = Semester::orderBy('tahun_ajaran', 'asc')->orderBy('nama_semester', 'asc')->get();
         $lokasiList = Lokasi::orderBy('nama_lokasi')->get();
 
         $tanggalAwal = $request->get('tanggal_awal', date('Y-m-01'));
@@ -55,41 +65,51 @@ class LaporanController extends Controller
 
     private function getStatistics($jenis, $tglAwal, $tglAkhir, $semesterId, $lokasiId)
     {
+        $labId = $this->getLabId();
+
         switch ($jenis) {
             case 'barang':
+                $query = Barang::query();
+                if ($labId) $query->where('id_lab', $labId);
+                if ($semesterId) $query->where('id_semester', $semesterId);
+                if ($lokasiId) $query->where('id_lokasi', $lokasiId);
                 return [
-                    'total' => Barang::count(),
-                    'totalUnit' => Barang::sum('stok'),
-                    'rusak' => Barang::sum('jumlah_rusak'),
-                    'hilang' => Barang::sum('jumlah_hilang'),
+                    'total' => (clone $query)->count(),
+                    'totalUnit' => (clone $query)->sum('stok'),
+                    'rusak' => (clone $query)->sum('jumlah_rusak'),
+                    'hilang' => (clone $query)->sum('jumlah_hilang'),
                 ];
             case 'barang-masuk':
                 $query = BarangMasuk::whereBetween('tanggal_masuk', [$tglAwal, $tglAkhir]);
-                if ($semesterId)
-                    $query->where('id_semester', $semesterId);
+                if ($labId) $query->where('id_lab', $labId);
+                if ($semesterId) $query->where('id_semester', $semesterId);
                 return [
-                    'totalTransaksi' => $query->count(),
-                    'totalJumlah' => $query->sum('jumlah_masuk'),
+                    'totalTransaksi' => (clone $query)->count(),
+                    'totalJumlah' => (clone $query)->sum('jumlah_masuk'),
                     'menunggu' => (clone $query)->where('status', 'menunggu')->count(),
                     'diterima' => (clone $query)->where('status', 'diterima')->count(),
                 ];
             case 'riwayat-peminjaman':
                 $query = Peminjaman::where('status_transaksi', 'selesai');
-                if ($semesterId)
-                    $query->where('id_semester', $semesterId);
-                $totalUnit = PeminjamanDetail::whereHas('peminjaman', fn($q) => $q->where('status_transaksi', 'selesai'))
-                    ->when($semesterId, fn($q) => $q->whereHas('peminjaman', fn($sq) => $sq->where('id_semester', $semesterId)))
-                    ->sum('jumlah');
-                $rusak = PeminjamanDetail::whereHas('peminjaman', fn($q) => $q->where('status_transaksi', 'selesai'))
-                    ->where('kondisi_setelah', 'rusak')
-                    ->when($semesterId, fn($q) => $q->whereHas('peminjaman', fn($sq) => $sq->where('id_semester', $semesterId)))
-                    ->sum('jumlah');
-                $hilang = PeminjamanDetail::whereHas('peminjaman', fn($q) => $q->where('status_transaksi', 'selesai'))
-                    ->where('kondisi_setelah', 'hilang')
-                    ->when($semesterId, fn($q) => $q->whereHas('peminjaman', fn($sq) => $sq->where('id_semester', $semesterId)))
-                    ->sum('jumlah');
+                if ($labId) $query->where('id_lab', $labId);
+                if ($semesterId) $query->where('id_semester', $semesterId);
+                $totalUnit = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($labId, $semesterId) {
+                    $q->where('status_transaksi', 'selesai');
+                    if ($labId) $q->where('id_lab', $labId);
+                    if ($semesterId) $q->where('id_semester', $semesterId);
+                })->sum('jumlah');
+                $rusak = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($labId, $semesterId) {
+                    $q->where('status_transaksi', 'selesai');
+                    if ($labId) $q->where('id_lab', $labId);
+                    if ($semesterId) $q->where('id_semester', $semesterId);
+                })->where('kondisi_setelah', 'rusak')->sum('jumlah');
+                $hilang = PeminjamanDetail::whereHas('peminjaman', function ($q) use ($labId, $semesterId) {
+                    $q->where('status_transaksi', 'selesai');
+                    if ($labId) $q->where('id_lab', $labId);
+                    if ($semesterId) $q->where('id_semester', $semesterId);
+                })->where('kondisi_setelah', 'hilang')->sum('jumlah');
                 return [
-                    'totalSelesai' => $query->count(),
+                    'totalSelesai' => (clone $query)->count(),
                     'totalUnit' => $totalUnit,
                     'rusak' => $rusak,
                     'hilang' => $hilang,
@@ -109,48 +129,46 @@ class LaporanController extends Controller
 
     private function buildQuery($jenis, $tglAwal, $tglAkhir, $semesterId, $lokasiId, $status)
     {
+        $labId = $this->getLabId();
+
         switch ($jenis) {
             case 'barang':
                 $query = Barang::with(['lokasi', 'semester']);
-                if ($semesterId)
-                    $query->where('id_semester', $semesterId);
-                if ($lokasiId)
-                    $query->where('id_lokasi', $lokasiId);
-                return $query->orderBy('created_at', 'desc');
+                if ($labId) $query->where('id_lab', $labId);
+                if ($semesterId) $query->where('id_semester', $semesterId);
+                if ($lokasiId) $query->where('id_lokasi', $lokasiId);
+                return $query->orderBy('created_at', 'asc');
             case 'barang-masuk':
                 $query = BarangMasuk::with(['barang', 'user', 'penanggungJawab', 'semester'])
                     ->whereBetween('tanggal_masuk', [$tglAwal, $tglAkhir]);
-                if ($semesterId)
-                    $query->where('id_semester', $semesterId);
-                if ($status)
-                    $query->where('status', $status);
-                return $query->orderBy('tanggal_masuk', 'desc');
+                if ($labId) $query->where('id_lab', $labId);
+                if ($semesterId) $query->where('id_semester', $semesterId);
+                if ($status) $query->where('status', $status);
+                return $query->orderBy('tanggal_masuk', 'asc');
             case 'riwayat-peminjaman':
                 $query = Peminjaman::with(['details.barang', 'user'])
                     ->where('status_transaksi', 'selesai');
-                if ($semesterId)
-                    $query->where('id_semester', $semesterId);
+                if ($labId) $query->where('id_lab', $labId);
+                if ($semesterId) $query->where('id_semester', $semesterId);
                 if ($tglAwal && $tglAkhir) {
                     $query->whereHas('details', function ($q) use ($tglAwal, $tglAkhir) {
                         $q->whereBetween('tanggal_kembali_aktual', [$tglAwal, $tglAkhir]);
                     });
                 }
-                return $query->orderBy('updated_at', 'desc');
+                return $query->orderBy('updated_at', 'asc');
             case 'manajemen-stok':
-                // Tidak digunakan karena sudah ditangani khusus di getPreviewData/getFullData
                 return Barang::query();
             default:
                 return Barang::query();
         }
     }
 
-    /**
-     * Mengambil data pergerakan stok untuk setiap barang dalam rentang tanggal dan semester/lokasi tertentu.
-     * Hasil berupa collection of object dengan field: nama_barang, merk, stok_awal, stok_masuk, stok_keluar, stok_akhir.
-     */
     private function getStockMovementData($tglAwal, $tglAkhir, $semesterId, $lokasiId)
     {
+        $labId = $this->getLabId();
+
         $barangs = Barang::with(['lokasi', 'semester'])
+            ->when($labId, fn($q) => $q->where('id_lab', $labId))
             ->when($semesterId, fn($q) => $q->where('id_semester', $semesterId))
             ->when($lokasiId, fn($q) => $q->where('id_lokasi', $lokasiId))
             ->orderBy('nama_barang')
@@ -158,23 +176,21 @@ class LaporanController extends Controller
 
         $rekap = [];
         foreach ($barangs as $barang) {
-            // Stok awal = stok sebelum tanggal awal
             $stokAwal = $this->getStokAwal($barang->id_barang, $tglAwal, $semesterId);
 
-            // Stok masuk dalam periode (barang_masuk status diterima)
             $stokMasuk = BarangMasuk::where('id_barang', $barang->id_barang)
                 ->where('status', 'diterima')
                 ->whereBetween('tanggal_masuk', [$tglAwal, $tglAkhir])
+                ->when($labId, fn($q) => $q->where('id_lab', $labId))
                 ->when($semesterId, fn($q) => $q->where('id_semester', $semesterId))
                 ->sum('jumlah_masuk');
 
-            // Stok keluar dalam periode (peminjaman yang sudah dikembalikan)
             $stokKeluar = PeminjamanDetail::where('id_barang', $barang->id_barang)
                 ->where('status_item', 'kembali')
-                ->whereHas('peminjaman', function ($q) use ($tglAwal, $tglAkhir, $semesterId) {
+                ->whereHas('peminjaman', function ($q) use ($tglAwal, $tglAkhir, $labId, $semesterId) {
                     $q->whereBetween('tanggal_kembali_aktual', [$tglAwal, $tglAkhir]);
-                    if ($semesterId)
-                        $q->where('id_semester', $semesterId);
+                    if ($labId) $q->where('id_lab', $labId);
+                    if ($semesterId) $q->where('id_semester', $semesterId);
                 })
                 ->sum('jumlah');
 
@@ -192,36 +208,32 @@ class LaporanController extends Controller
         return collect($rekap);
     }
 
-    /**
-     * Hitung stok awal pada tanggal tertentu (sebelum $tanggalAwal).
-     */
     private function getStokAwal($idBarang, $tanggalAwal, $semesterId)
     {
+        $labId = $this->getLabId();
         $barang = Barang::find($idBarang);
         $stokSekarang = $barang->stok;
 
-        // Total masuk setelah tanggal awal (termasuk sampai sekarang) dalam semester yang sama
         $masukSetelah = BarangMasuk::where('id_barang', $idBarang)
             ->where('status', 'diterima')
             ->where('tanggal_masuk', '>=', $tanggalAwal)
+            ->when($labId, fn($q) => $q->where('id_lab', $labId))
             ->when($semesterId, fn($q) => $q->where('id_semester', $semesterId))
             ->sum('jumlah_masuk');
 
-        // Total keluar setelah tanggal awal (pengembalian)
         $keluarSetelah = PeminjamanDetail::where('id_barang', $idBarang)
             ->where('status_item', 'kembali')
-            ->whereHas('peminjaman', function ($q) use ($tanggalAwal, $semesterId) {
+            ->whereHas('peminjaman', function ($q) use ($tanggalAwal, $labId, $semesterId) {
                 $q->where('tanggal_kembali_aktual', '>=', $tanggalAwal);
-                if ($semesterId)
-                    $q->where('id_semester', $semesterId);
+                if ($labId) $q->where('id_lab', $labId);
+                if ($semesterId) $q->where('id_semester', $semesterId);
             })
             ->sum('jumlah');
 
-        // Stok awal = stok sekarang - masuk setelah + keluar setelah
         return $stokSekarang - $masukSetelah + $keluarSetelah;
     }
 
-    // ========== EKSPOR PDF ==========
+    // ========== EKSPOR PDF & CSV & EXCEL ==========
     public function exportPdf($jenis, Request $request)
     {
         $data = $this->getFullData($jenis, $request);
@@ -229,7 +241,6 @@ class LaporanController extends Controller
         return $pdf->download('laporan_' . $jenis . '_' . date('YmdHis') . '.pdf');
     }
 
-    // ========== EKSPOR CSV ==========
     public function exportCsv($jenis, Request $request)
     {
         $data = $this->getFullData($jenis, $request);
@@ -239,7 +250,7 @@ class LaporanController extends Controller
 
         $callback = function () use ($data, $jenis, $headers) {
             $handle = fopen('php://output', 'w');
-            fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM
+            fputs($handle, "\xEF\xBB\xBF");
             fputcsv($handle, $headers);
 
             foreach ($data as $item) {
@@ -254,10 +265,6 @@ class LaporanController extends Controller
         ]);
     }
 
-    // ========== EKSPOR EXCEL (xlswriter) ==========
-    /**
-     * Ekspor laporan ke file Excel (.xlsx) menggunakan ekstensi xlswriter
-     */
     public function exportExcel($jenis, Request $request)
     {
         $data = $this->getFullData($jenis, $request);
@@ -270,13 +277,11 @@ class LaporanController extends Controller
 
         $filename = 'laporan_' . $jenis . '_' . date('YmdHis') . '.xlsx';
 
-        // Tentukan folder sementara (bisa di storage/app/temp)
         $tempDir = storage_path('app/temp');
         if (!file_exists($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
-        // Gunakan class asli dari ekstensi xlswriter
         $excel = new \Vtiful\Kernel\Excel(['path' => $tempDir]);
         $excel->fileName($filename, 'Sheet1');
         $excel->header($headers);
@@ -321,7 +326,7 @@ class LaporanController extends Controller
                 ];
             case 'barang-masuk':
                 return [
-                    $item->tanggal_masuk,
+                    $item->tanggal_masuk ? \Carbon\Carbon::parse($item->tanggal_masuk)->format('Y-m-d') : '-',
                     $item->barang->nama_barang ?? '-',
                     $item->jumlah_masuk,
                     $item->sumber ?? '-',
@@ -337,8 +342,8 @@ class LaporanController extends Controller
                 return [
                     $item->kode_transaksi,
                     $item->nama_peminjam,
-                    $item->tanggal_penggunaan,
-                    $tglKembali ?? '-',
+                    $item->tanggal_penggunaan ? \Carbon\Carbon::parse($item->tanggal_penggunaan)->format('Y-m-d') : '-',
+                    $tglKembali ? \Carbon\Carbon::parse($tglKembali)->format('Y-m-d') : '-',
                     $item->details->sum('jumlah'),
                     $rusak,
                     $hilang,

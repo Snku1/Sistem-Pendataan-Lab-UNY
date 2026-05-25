@@ -10,7 +10,7 @@ class AdminLokasiController extends Controller
 {
     public function index()
     {
-        $lokasiList = Lokasi::orderBy('created_at', 'desc')->paginate(10);
+        $lokasiList = Lokasi::orderBy('created_at', 'asc')->paginate(10);
         return view('admin.lokasi.index', compact('lokasiList'));
     }
 

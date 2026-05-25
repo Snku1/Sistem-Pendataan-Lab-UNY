@@ -12,7 +12,7 @@ class AdminUserController extends Controller
 {
     public function index()
     {
-        $users = User::with('laboratorium')->orderBy('created_at', 'desc')->paginate(10);
+        $users = User::with('laboratorium')->orderBy('created_at', 'asc')->paginate(10);
         return view('admin.users.index', compact('users'));
     }
 
