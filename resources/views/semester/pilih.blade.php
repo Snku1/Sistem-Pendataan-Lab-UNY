@@ -23,7 +23,7 @@
                     @endif
 
                     @if ($semesterList->isEmpty())
-                        <div class="alert alert-warning">Belum ada data semester. Hubungi admin.</div>
+                        <div class="alert alert-warning">Belum ada data semester. Silahkan tambahkan data semester terlebih dahulu di Manajemen Semester.</div>
                     @else
                         <form method="POST" action="{{ route('pilih-semester.store') }}">
                             @csrf
